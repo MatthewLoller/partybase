@@ -64,12 +64,25 @@ Partybase estimates the current Defence of supported bosses and NPCs.
 - **Encounter state:** the current state of each encounter is shared, which helps when someone joins late or dies. Separate raid instances are kept apart, and multi-target encounters keep a value per target (for example Olm's claws).
 - **Supported bosses:** Chambers of Xeric, Theatre of Blood, Tombs of Amascut, The Fractured Archive, and many other bosses.
 
+## Custom party server
+
+By default Partybase uses RuneLite's party server. You can run your own instead: The separate `partybase-server` repo is a small AWS relay you deploy with CDK. See its README for deploying it and creating keys.
+
+- **Turning it on:** in Partybase settings, open **Party server**. Put the server's `wss://` address in **Server URL**, and your personal key in **Server key**. Leave the key empty if the server needs none.
+- **What changes:** all Partybase party traffic goes to that server, including member stats, inventory, gear and prayers. Partybase sends those itself, because RuneLite's party data only travels over RuneLite's server.
+- **Joining:** you still join parties by passphrase, with the same Party info controls. Everyone in the party must use the same server.
+- **Switching:** changing the URL or key moves you, with your current party passphrase, to the new server straight away.
+- **Reconnects:** if the connection drops, Partybase reconnects with growing waits (2 seconds up to a minute). It keeps your member id, so the leader and party timer survive. A refused key is not retried. Partybase says so in the chatbox instead.
+- **Security:** only `wss://` addresses are accepted, except `ws://localhost` for testing. The key is stored as a secret setting and sent only to that server.
+- **Limits:** the avatar picture in Party info only exists on RuneLite's party. RuneLite's own plugins (such as the Party sidebar and Special Attack Counter) keep using RuneLite's party and don't see relay traffic. Partybase still shares your specs with the relay party itself.
+
 ## Settings
 
 All settings are in the Partybase config panel, in these sections:
 
 | Section | What it covers |
 | --- | --- |
+| Party server | Server URL and key for a custom relay server; empty uses RuneLite's party server |
 | Party info | Sidebar icon, party controls, passphrase, expanding members, virtual levels, worlds, the not-in-a-party reminder |
 | DPS: party | Sharing, counting others, raid party and own party, auto boss report, leave on logout, chat colour |
 | DPS: overlay | Show overlay, compact mode, max bars, width, hide when empty, your bar colour, overall meter, boss meter, simple defence label, hit chance |
@@ -78,16 +91,20 @@ All settings are in the Partybase config panel, in these sections:
 
 ## How party data travels
 
-All party data goes through RuneLite's party server. Clients never connect to each other directly. Each message reaches everyone in the party with the same passphrase.
+All party data goes through a party server: RuneLite's, or your own relay server when one is set (see Custom party server). Clients never connect to each other directly. Each message reaches everyone in the party with the same passphrase.
 
 | Message | What it carries |
 | --- | --- |
-| RuneLite's party data (core) | Name, HP, prayer, energy, spec, skills, inventory, equipment, prayers, rune pouch, quiver |
+| RuneLite's party data (`PartyData`) | Name, HP, prayer, energy, spec, skills, inventory, equipment, prayers, rune pouch, quiver. Sent by RuneLite on its party, and by Partybase on a relay server |
 | `PartybaseBatchedChange` | Stamina, poison, disease, world, spellbook, available and unlocked prayers |
 | `PartybaseDpsUpdate` | Your hits, healing and damage taken, once per game tick while fighting |
 | `PartybaseDpsPartyMessage` | Join times, leader changes, kicks, and marks |
 | `PartybaseDefence*` | Defence specs, encounter state, Red Keris timer |
-| RuneLite's party chat (core) | Fight and boss reports |
+| `SpecialCounterUpdate` | Defence-draining specs, in RuneLite's Special Attack Counter format |
+| `PartyChatMessage` | Fight and boss reports, shown as party chat |
+| `UserSync` | Sent after joining, asking everyone to resend their full state |
+
+On a relay server, each message is wrapped as `{"t":"<type>","d":{...}}`. The server forwards it unchanged.
 
 RuneLite parties have no leader role. Each client works out the leader from Partybase's messages, and only accepts marks and kicks from that leader. Anyone with the passphrase can join, so share it only with your party.
 
@@ -104,6 +121,8 @@ gradlew run     # RuneLite in developer mode with Partybase loaded
 gradlew build   # compile, checkstyle and tests
 ```
 
+`PartyLinkRelayLiveTest` runs two real party clients against a relay server. It is skipped unless `PARTYBASE_SERVER_URL` (and `PARTYBASE_SERVER_KEY` for a server with keys) are set.
+
 - **Logging in:** use the Jagex account button in the client sidebar.
 - **VS Code:** `.vscode/settings.json` points the Java extension at JDK 11, because Gradle 8.10 can't run on the bundled Java 25. Start the client from the Gradle sidebar: partybase > Tasks > other > run.
 - **Git:** use Windows git (or IntelliJ/VS Code) in this folder. WSL git can't set file permissions on the C: drive.
@@ -111,10 +130,11 @@ gradlew build   # compile, checkstyle and tests
 ### Code layout
 
 - `com.matthewloller.partybase`: the plugin, its config and the sidebar panel. The `data` and `ui` packages hold the Party info code from Party Panel.
+- `party`: `PartyLink`, the one party API every feature uses. It is backed by RuneLite's party or a relay server, and posts Partybase party events (`party.events`) in both cases. No other package uses RuneLite's `PartyService`, `WSClient` or party events.
 - `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
 - `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
 
-Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts and registers on the event bus, then stops in reverse order. All settings live in `PartybaseConfig`. Party messages are named `Partybase*`.
+Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts and registers on the event bus, then stops in reverse order. `PartyLink` starts before the modules and stops after them. All settings live in `PartybaseConfig`. Party messages are named `Partybase*`.
 
 ### Code conventions
 
@@ -122,8 +142,12 @@ Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` st
 - No unused imports. Static imports come first, then the rest in alphabetical order.
 - LF line endings (see `.gitattributes`).
 - Every source file starts with the BSD 2-Clause header naming its original author.
-- Run `tools/format.sh` (needs `astyle`) before committing to apply the formatting and import rules.
+- Run `tools/format.sh` (needs `astyle`) before committing to apply the formatting and import rules. Running it twice changes nothing.
 - Update this README with every feature change.
+
+## Plugin Hub
+
+Because Partybase can connect to a server RuneLite doesn't run, its Plugin Hub entry needs a `warning=` line, for example: "This plugin can send your party data (character name, stats, inventory, equipment and combat information) to a 3rd-party party server not controlled or verified by RuneLite developers, if you set one in its settings." The custom server is off unless a Server URL is set.
 
 ## Credits and licences
 

@@ -34,6 +34,7 @@ import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -45,7 +46,6 @@ import net.runelite.api.Client;
 import net.runelite.api.IndexedObjectSet;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +88,7 @@ public class EncounterLifecycleRegressionTest
 		pluginField("client").set(plugin, client);
 		pluginField("config").set(plugin, config);
 		pluginField("defenceTracker").set(plugin, tracker);
-		pluginField("partyService").set(plugin, mock(PartyService.class));
+		pluginField("partyLink").set(plugin, mock(PartyLink.class));
 		displayGate = (InitialSyncDisplayGate) pluginField("initialSyncDisplayGate").get(plugin);
 
 		tracker.applySyncState(tektonState(), npc);

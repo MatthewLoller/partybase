@@ -35,6 +35,7 @@ import com.matthewloller.partybase.dps.model.HitAttributor;
 import com.matthewloller.partybase.dps.model.PlayerKind;
 import com.matthewloller.partybase.dps.model.SoulreaperStacks;
 import com.matthewloller.partybase.dps.model.TargetMatcher;
+import com.matthewloller.partybase.party.PartyLink;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +53,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.SpotanimID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
-import net.runelite.client.party.PartyService;
 
 /**
  * Turns hitsplats into damage for the fight, and attacks (animations, spell casts, special
@@ -63,7 +63,7 @@ class CombatEvents
 	private static final int EAT_ANIMATION = 829;
 
 	private final Client client;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 	private final PartybaseConfig config;
 	private final FightTracker tracker;
 	private final Bosses bosses;
@@ -131,13 +131,13 @@ class CombatEvents
 	private final Set<Projectile> seenProjectiles = Collections.newSetFromMap(new WeakHashMap<>());
 	private final MarkedTarget marked;
 
-	CombatEvents(Client client, PartyService partyService, PartybaseConfig config, FightTracker tracker, Bosses bosses,
+	CombatEvents(Client client, PartyLink partyLink, PartybaseConfig config, FightTracker tracker, Bosses bosses,
 		TargetMatcher matcher, LocalHealing healing, BarrowsTracker barrows, PartyManager party,
 		PartyUpdates partyUpdates, DefenceDrains defence, MarkedTarget marked)
 	{
 		this.marked = marked;
 		this.client = client;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 		this.config = config;
 		this.tracker = tracker;
 		this.bosses = bosses;
@@ -420,7 +420,7 @@ class CombatEvents
 		{
 			return true;
 		}
-		if (!partyService.isInParty())
+		if (!partyLink.isInParty())
 		{
 			return false;
 		}

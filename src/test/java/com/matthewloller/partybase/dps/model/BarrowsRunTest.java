@@ -200,7 +200,7 @@ public class BarrowsRunTest
 	public void onlyAFullRunSetsAPersonalBest()
 	{
 		String[] brothers = {"Ahrim the Blighted", DHAROK, "Guthan the Infested", "Karil the Tainted",
-			"Torag the Corrupted", VERAC};
+						"Torag the Corrupted", VERAC};
 		FightTracker t = new FightTracker();
 		BarrowsRun run = new BarrowsRun();
 		for (int i = 0; i < brothers.length; i++)

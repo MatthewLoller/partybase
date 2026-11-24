@@ -24,24 +24,24 @@
  */
 package com.matthewloller.partybase.defence;
 
+import com.matthewloller.partybase.party.PartyLink;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.client.party.PartyService;
 
 // Resolves the transport scope for the current world or raid encounter.
 final class EncounterScopeResolver
 {
 	private final Client client;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 
-	EncounterScopeResolver(Client client, PartyService partyService)
+	EncounterScopeResolver(Client client, PartyLink partyLink)
 	{
 		this.client = client;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 	}
 
 	SyncScope current()
@@ -189,7 +189,7 @@ final class EncounterScopeResolver
 
 	boolean syncScopeStillValid(int scopeType, int scopeId)
 	{
-		if (client.getGameState() != GameState.LOGGED_IN || !partyService.isInParty())
+		if (client.getGameState() != GameState.LOGGED_IN || !partyLink.isInParty())
 		{
 			return false;
 		}

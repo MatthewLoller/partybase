@@ -30,11 +30,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.matthewloller.partybase.party.PartyLink;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
 import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.client.party.PartyService;
 import org.junit.Test;
 
 public class EncounterScopeResolverTest
@@ -76,7 +76,7 @@ public class EncounterScopeResolverTest
 		when(world.isInstance()).thenReturn(true);
 		when(world.getBaseX()).thenReturn(1000);
 		when(world.getBaseY()).thenReturn(2000);
-		EncounterScopeResolver resolver = new EncounterScopeResolver(client, mock(PartyService.class));
+		EncounterScopeResolver resolver = new EncounterScopeResolver(client, mock(PartyLink.class));
 		int fingerprint = EncounterScopes.instanceFingerprint(world);
 
 		assertEquals(new SyncScope(PartybaseDefenceSync.SCOPE_INSTANCE, fingerprint),

@@ -33,6 +33,13 @@ import com.matthewloller.partybase.data.events.PartyMiscChange;
 import com.matthewloller.partybase.data.events.PartybaseBatchedChange;
 import com.matthewloller.partybase.defence.DefenceModule;
 import com.matthewloller.partybase.dps.DpsModule;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
+import com.matthewloller.partybase.party.events.PartybaseMemberAvatar;
+import com.matthewloller.partybase.party.events.PartybaseMemberData;
+import com.matthewloller.partybase.party.events.PartybasePartyChanged;
+import com.matthewloller.partybase.party.events.PartybaseUserPart;
+import com.matthewloller.partybase.party.events.PartybaseUserSync;
 import com.matthewloller.partybase.ui.PlayerPanel;
 import com.matthewloller.partybase.ui.prayer.PrayerSprites;
 import java.awt.image.BufferedImage;
@@ -68,18 +75,11 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.events.PartyChanged;
-import net.runelite.client.events.PartyMemberAvatar;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.ItemVariationMapping;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.party.PartyDataService;
 import net.runelite.client.party.PartyDataType;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
-import net.runelite.client.party.WSClient;
-import net.runelite.client.party.events.UserPart;
-import net.runelite.client.party.messages.PartyData;
 import net.runelite.client.party.messages.UserSync;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
@@ -128,7 +128,7 @@ public class PartybasePlugin extends Plugin
 	private PartybaseConfig config;
 
 	@Inject
-	private PartyService partyService;
+	private PartyLink partyLink;
 
 	@Inject
 	private PartyDataService partyDataService;
@@ -138,9 +138,6 @@ public class PartybasePlugin extends Plugin
 
 	@Inject
 	ItemManager itemManager;
-
-	@Inject
-	private WSClient wsClient;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -193,6 +190,8 @@ public class PartybasePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		// the party first: the modules register their messages with it
+		partyLink.startUp();
 		modules = Arrays.asList(dps, defence);
 		for (PartybaseModule module : modules)
 		{
@@ -208,7 +207,7 @@ public class PartybasePlugin extends Plugin
 			.panel(panel)
 			.build();
 
-		wsClient.registerMessage(PartybaseBatchedChange.class);
+		partyLink.registerMessage(PartybaseBatchedChange.class);
 		partyDataService.subscribe(this,
 			PartyDataType.CHARACTER_NAME,
 			PartyDataType.ENERGY,
@@ -231,9 +230,9 @@ public class PartybasePlugin extends Plugin
 		{
 			clientThread.invokeLater(() ->
 			{
-				myPlayer = new PartyPlayer(partyService.getLocalMember(), client, itemManager, clientThread);
-				partyService.send(new UserSync());
-				partyService.send(partyPlayerAsBatchedChange());
+				myPlayer = new PartyPlayer(partyLink.getLocalMember(), client, itemManager, clientThread);
+				partyLink.send(new UserSync());
+				partyLink.send(partyPlayerAsBatchedChange());
 			});
 		}
 
@@ -248,13 +247,13 @@ public class PartybasePlugin extends Plugin
 		{
 			final PartybaseBatchedChange cleanUserInfo = partyPlayerAsBatchedChange();
 			cleanUserInfo.setM(Collections.emptySet());
-			partyService.send(cleanUserInfo);
+			partyLink.send(cleanUserInfo);
 		}
 
 		clientToolbar.removeNavigation(navButton);
 		addedButton = false;
 		partyMembers.clear();
-		wsClient.unregisterMessage(PartybaseBatchedChange.class);
+		partyLink.unregisterMessage(PartybaseBatchedChange.class);
 		partyDataService.unsubscribe(this, PartyDataType.values());
 		partyDataService.unsubscribe(this, Skill.values());
 		currentChange = new PartybaseBatchedChange();
@@ -268,6 +267,7 @@ public class PartybasePlugin extends Plugin
 			modules.get(i).shutDown();
 		}
 		modules = Collections.emptyList();
+		partyLink.shutDown();
 	}
 
 	@Subscribe
@@ -328,9 +328,9 @@ public class PartybasePlugin extends Plugin
 
 		if (myPlayer == null)
 		{
-			myPlayer = new PartyPlayer(partyService.getLocalMember(), client, itemManager, clientThread);
+			myPlayer = new PartyPlayer(partyLink.getLocalMember(), client, itemManager, clientThread);
 			final PartybaseBatchedChange ce = partyPlayerAsBatchedChange();
-			partyService.send(ce);
+			partyLink.send(ce);
 			return;
 		}
 
@@ -356,23 +356,23 @@ public class PartybasePlugin extends Plugin
 			myPlayer.setWorld(0);
 			currentChange.getM().add(new PartyMiscChange(PartyMiscChange.PartyMisc.W, 0));
 
-			partyService.send(currentChange);
+			partyLink.send(currentChange);
 			currentChange = new PartybaseBatchedChange();
 		}
 	}
 
 	public boolean isInParty()
 	{
-		return partyService.isInParty();
+		return partyLink.isInParty();
 	}
 
 	public boolean isLocalPlayer(long id)
 	{
-		return partyService.getLocalMember() != null && partyService.getLocalMember().getMemberId() == id;
+		return partyLink.getLocalMember() != null && partyLink.getLocalMember().getMemberId() == id;
 	}
 
 	@Subscribe
-	public void onUserPart(final UserPart event)
+	public void onPartybaseUserPart(final PartybaseUserPart event)
 	{
 		final PartyPlayer removed = partyMembers.remove(event.getMemberId());
 		if (removed != null)
@@ -380,7 +380,7 @@ public class PartybasePlugin extends Plugin
 			SwingUtilities.invokeLater(() -> panel.removePartyPlayer(removed));
 		}
 
-		if (addedButton && (!isInParty() || partyService.getMembers().isEmpty()) && !config.alwaysShowIcon())
+		if (addedButton && (!isInParty() || partyLink.getMembers().isEmpty()) && !config.alwaysShowIcon())
 		{
 			clientToolbar.removeNavigation(navButton);
 			addedButton = false;
@@ -388,7 +388,7 @@ public class PartybasePlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onUserSync(final UserSync event)
+	public void onPartybaseUserSync(final PartybaseUserSync event)
 	{
 		if (!addedButton)
 		{
@@ -401,24 +401,24 @@ public class PartybasePlugin extends Plugin
 			final PartybaseBatchedChange c = partyPlayerAsBatchedChange();
 			if (c.isValid())
 			{
-				partyService.send(c);
+				partyLink.send(c);
 			}
 			return;
 		}
 
 		clientThread.invoke(() ->
 		{
-			myPlayer = new PartyPlayer(partyService.getLocalMember(), client, itemManager, clientThread);
+			myPlayer = new PartyPlayer(partyLink.getLocalMember(), client, itemManager, clientThread);
 			final PartybaseBatchedChange c = partyPlayerAsBatchedChange();
 			if (c.isValid())
 			{
-				partyService.send(c);
+				partyLink.send(c);
 			}
 		});
 	}
 
 	@Subscribe
-	public void onPartyChanged(final PartyChanged event)
+	public void onPartybasePartyChanged(final PartybasePartyChanged event)
 	{
 		partyMembers.clear();
 		SwingUtilities.invokeLater(() ->
@@ -453,13 +453,13 @@ public class PartybasePlugin extends Plugin
 	@Subscribe
 	public void onGameTick(final GameTick tick)
 	{
-		if (!isInParty() || client.getLocalPlayer() == null || partyService.getLocalMember() == null)
+		if (!isInParty() || client.getLocalPlayer() == null || partyLink.getLocalMember() == null)
 		{
 			return;
 		}
 
 		// To reduce server load we should only process changes every X ticks
-		if (client.getTickCount() % messageFreq(partyService.getMembers().size()) != 0)
+		if (client.getTickCount() % messageFreq(partyLink.getMembers().size()) != 0)
 		{
 			return;
 		}
@@ -467,9 +467,9 @@ public class PartybasePlugin extends Plugin
 		// First time logging in, or they changed accounts so resend the entire player object
 		if (myPlayer == null || !Objects.equals(client.getLocalPlayer().getName(), myPlayer.getUsername()))
 		{
-			myPlayer = new PartyPlayer(partyService.getLocalMember(), client, itemManager, clientThread);
+			myPlayer = new PartyPlayer(partyLink.getLocalMember(), client, itemManager, clientThread);
 			final PartybaseBatchedChange c = partyPlayerAsBatchedChange();
-			partyService.send(c);
+			partyLink.send(c);
 			return;
 		}
 
@@ -518,26 +518,26 @@ public class PartybasePlugin extends Plugin
 
 		if (currentChange.isValid())
 		{
-			currentChange.setMemberId(partyService.getLocalMember().getMemberId()); // Add member ID before sending
+			currentChange.setMemberId(partyLink.getLocalMember().getMemberId()); // Add member ID before sending
 			currentChange.removeDefaults();
-			partyService.send(currentChange);
+			partyLink.send(currentChange);
 
 			currentChange = new PartybaseBatchedChange();
 		}
 	}
 
 	@Subscribe
-	public void onPartyData(final PartyData event)
+	public void onPartybaseMemberData(final PartybaseMemberData event)
 	{
-		// PartyDataService tracks data for the local player (since it transmits it for us anyway)
-		// In theory we could ignore these updates, but I am keeping this data locally for backwards compatibility reasons
-		// Mainly this allows us to view ourselves in the side panel by setting isLocalPlayer to always return false
-		// Which means we can test the plugin by viewing our own player without needing to multi-log
+		// Member data (stats, inventory, gear, prayers) comes from RuneLite's PartyDataService or, on a relay
+		// server, from Partybase's own sender. Your own data is shown too, in your collapsed banner.
+		final PartybaseMember newData = partyLink.getMemberById(event.getMemberId());
+		if (newData == null)
+		{
+			return;
+		}
 		final PartyPlayer partyPlayer = partyMembers.computeIfAbsent(
 				event.getMemberId(), k -> new PartyPlayer());
-
-		final PartyMember newData = partyService.getMemberById(event.getMemberId());
-
 
 		clientThread.invoke(() ->
 		{
@@ -606,7 +606,7 @@ public class PartybasePlugin extends Plugin
 		// create new PartyPlayer for this member if they don't already exist
 		final PartyPlayer player = partyMembers.computeIfAbsent(
 				e.getMemberId(),
-				k -> new PartyPlayer(partyService.getMemberById(e.getMemberId()), itemManager));
+				k -> new PartyPlayer(partyLink.getMemberById(e.getMemberId()), itemManager));
 
 		// Create placeholder prayer object
 		if (player.getPrayers() == null && (e.getAp() != null || e.getUp() != null))
@@ -626,7 +626,7 @@ public class PartybasePlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onPartyMemberAvatar(PartyMemberAvatar e)
+	public void onPartybaseMemberAvatar(PartybaseMemberAvatar e)
 	{
 		if (partyMembers.get(e.getMemberId()) == null)
 		{
@@ -634,7 +634,7 @@ public class PartybasePlugin extends Plugin
 		}
 
 		final PartyPlayer player = partyMembers.get(e.getMemberId());
-		player.setMember(partyService.getMemberById(e.getMemberId()));
+		player.setMember(partyLink.getMemberById(e.getMemberId()));
 		SwingUtilities.invokeLater(() ->
 		{
 			final PlayerPanel p = panel.getPlayerPanelMap().get(e.getMemberId());
@@ -666,24 +666,24 @@ public class PartybasePlugin extends Plugin
 			}
 		}
 
-		partyService.changeParty(passphrase);
+		partyLink.changeParty(passphrase);
 		panel.updateParty();
 	}
 
 	public void createParty()
 	{
 		// Create party
-		clientThread.invokeLater(() -> changeParty(partyService.generatePassphrase()));
+		clientThread.invokeLater(() -> changeParty(partyLink.generatePassphrase()));
 	}
 
 	public String getPartyPassphrase()
 	{
-		return partyService.getPartyPassphrase();
+		return partyLink.getPartyPassphrase();
 	}
 
 	public void leaveParty()
 	{
-		partyService.changeParty(null);
+		partyLink.changeParty(null);
 		panel.updateParty();
 	}
 
@@ -731,7 +731,7 @@ public class PartybasePlugin extends Plugin
 			includeAvailableAndUnlockedPrayersInBatchedChange(c);
 		}
 
-		c.setMemberId(partyService.getLocalMember().getMemberId()); // Add member ID before sending
+		c.setMemberId(partyLink.getLocalMember().getMemberId()); // Add member ID before sending
 		c.removeDefaults();
 
 		return c;
@@ -749,10 +749,10 @@ public class PartybasePlugin extends Plugin
 		}
 
 		if (lastLogout != null && lastLogout.isBefore(Instant.now().minus(30, ChronoUnit.MINUTES))
-			&& partyService.isInParty())
+			&& partyLink.isInParty())
 		{
 			log.info("Leaving party due to inactivity");
-			partyService.changeParty(null);
+			partyLink.changeParty(null);
 		}
 	}
 

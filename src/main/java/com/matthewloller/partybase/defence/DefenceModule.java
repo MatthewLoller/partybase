@@ -6,7 +6,7 @@
  * Better Party Defence
  * Ported into Partybase as its defence tracker (DefenceModule).
  *
- * Uses RuneLite's shared PartyService session.
+ * Uses RuneLite's shared PartyLink session.
  * Does not create or enable a second party.
  *
  * Reads standard SpecialCounterUpdate party messages.
@@ -20,6 +20,11 @@ import com.matthewloller.partybase.PartybaseConfig.DefenceOverlayPosition;
 import com.matthewloller.partybase.PartybaseConfig.TrackerFont;
 import com.matthewloller.partybase.PartybaseModule;
 import com.matthewloller.partybase.PartybasePlugin;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
+import com.matthewloller.partybase.party.events.PartybasePartyChanged;
+import com.matthewloller.partybase.party.events.PartybaseSpecialCounter;
+import com.matthewloller.partybase.party.events.PartybaseUserJoin;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -57,14 +62,9 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.events.PartyChanged;
 import net.runelite.client.events.PluginChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SkillIconManager;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
-import net.runelite.client.party.WSClient;
-import net.runelite.client.party.events.UserJoin;
 import net.runelite.client.party.messages.PartyMemberMessage;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
@@ -87,10 +87,7 @@ public class DefenceModule implements PartybaseModule
 	private ClientThread clientThread;
 
 	@Inject
-	private PartyService partyService;
-
-	@Inject
-	private WSClient wsClient;
+	private PartyLink partyLink;
 
 	@Inject
 	private PluginManager pluginManager;
@@ -136,7 +133,7 @@ public class DefenceModule implements PartybaseModule
 		SYNC_HISTORY_DUPLICATE_WINDOW_TICKS);
 	private final Deque<PartybaseDefenceSync> pendingSnapshots = new ArrayDeque<>();
 	private volatile long partyEpoch;
-	// Use the last party id while PartyService briefly reports zero.
+	// Use the last party id while PartyLink briefly reports zero.
 	private Long currentPartyId;
 	private boolean wasInParty;
 	private final Deque<PartybaseDefenceKerisTimer> pendingKerisTimers = new ArrayDeque<>();
@@ -181,21 +178,21 @@ public class DefenceModule implements PartybaseModule
 		display.start(this);
 
 		// Decode standard specs even when Special Attack Counter is inactive.
-		// WSClient deduplicates message registrations by class.
-		wsClient.registerMessage(SpecialCounterUpdate.class);
+		// PartyLink (and WSClient) deduplicate message registrations by class.
+		partyLink.registerMessage(SpecialCounterUpdate.class);
 		// Register BPD sync messages.
-		wsClient.registerMessage(PartybaseDefenceSync.class);
-		wsClient.registerMessage(PartybaseDefenceSpecEvent.class);
-		wsClient.registerMessage(PartybaseDefenceEncounterPresence.class);
-		wsClient.registerMessage(PartybaseDefenceBossPresence.class);
-		wsClient.registerMessage(PartybaseDefenceEncounterReset.class);
-		wsClient.registerMessage(PartybaseDefenceKerisTimer.class);
+		partyLink.registerMessage(PartybaseDefenceSync.class);
+		partyLink.registerMessage(PartybaseDefenceSpecEvent.class);
+		partyLink.registerMessage(PartybaseDefenceEncounterPresence.class);
+		partyLink.registerMessage(PartybaseDefenceBossPresence.class);
+		partyLink.registerMessage(PartybaseDefenceEncounterReset.class);
+		partyLink.registerMessage(PartybaseDefenceKerisTimer.class);
 
 		defenceOverlay = new NpcDefenceOverlay(client, defenceTracker, config, display.iconSource(),
 			initialSyncDisplayGate);
 		overlayManager.add(defenceOverlay);
 
-		wasInParty = partyService.isInParty();
+		wasInParty = partyLink.isInParty();
 		log.info("Partybase defence tracker started; party active={}", wasInParty);
 		if (!isSpecialCounterActive())
 		{
@@ -224,16 +221,16 @@ public class DefenceModule implements PartybaseModule
 		toaEncounters = null;
 		clearPartyCaches();
 		clearEncounterSessionState();
-		wsClient.unregisterMessage(PartybaseDefenceEncounterReset.class);
-		wsClient.unregisterMessage(PartybaseDefenceKerisTimer.class);
-		wsClient.unregisterMessage(PartybaseDefenceEncounterPresence.class);
-		wsClient.unregisterMessage(PartybaseDefenceSync.class);
-		wsClient.unregisterMessage(PartybaseDefenceSpecEvent.class);
-		wsClient.unregisterMessage(PartybaseDefenceBossPresence.class);
+		partyLink.unregisterMessage(PartybaseDefenceEncounterReset.class);
+		partyLink.unregisterMessage(PartybaseDefenceKerisTimer.class);
+		partyLink.unregisterMessage(PartybaseDefenceEncounterPresence.class);
+		partyLink.unregisterMessage(PartybaseDefenceSync.class);
+		partyLink.unregisterMessage(PartybaseDefenceSpecEvent.class);
+		partyLink.unregisterMessage(PartybaseDefenceBossPresence.class);
 		// Special Attack Counter still needs this message class while active.
 		if (!isSpecialCounterActive())
 		{
-			wsClient.unregisterMessage(SpecialCounterUpdate.class);
+			partyLink.unregisterMessage(SpecialCounterUpdate.class);
 		}
 		localSpecDetector.reset();
 		defenceTracker.reset("plugin shutdown");
@@ -295,7 +292,7 @@ public class DefenceModule implements PartybaseModule
 	{
 		if (encounterScopeResolver == null)
 		{
-			encounterScopeResolver = new EncounterScopeResolver(client, partyService);
+			encounterScopeResolver = new EncounterScopeResolver(client, partyLink);
 		}
 		return encounterScopeResolver;
 	}
@@ -333,7 +330,7 @@ public class DefenceModule implements PartybaseModule
 	@Subscribe(priority = -100f)
 	public void onGameTick(GameTick event)
 	{
-		boolean inParty = partyService.isInParty();
+		boolean inParty = partyLink.isInParty();
 		if (inParty != wasInParty)
 		{
 			log.debug("Hub Party session state changed: {}", inParty ? "joined" : "left");
@@ -484,7 +481,7 @@ public class DefenceModule implements PartybaseModule
 	}
 
 	@Subscribe
-	public void onPartyChanged(PartyChanged event)
+	public void onPartybasePartyChanged(PartybasePartyChanged event)
 	{
 		partyEpoch++;
 		Long changedPartyId = event.getPartyId();
@@ -507,11 +504,11 @@ public class DefenceModule implements PartybaseModule
 	}
 
 	@Subscribe
-	public void onUserJoin(UserJoin event)
+	public void onPartybaseUserJoin(PartybaseUserJoin event)
 	{
-		PartyMember localMember = partyService.getLocalMember();
+		PartybaseMember localMember = partyLink.getLocalMember();
 		if (localMember == null || event.getMemberId() != localMember.getMemberId()
-			|| event.getPartyId() != partyService.getPartyId())
+			|| event.getPartyId() != partyLink.getPartyId())
 		{
 			return;
 		}
@@ -560,30 +557,35 @@ public class DefenceModule implements PartybaseModule
 		else
 		{
 			// SAC unregisters on shutdown; keep decoding peer specs.
-			wsClient.registerMessage(SpecialCounterUpdate.class);
+			partyLink.registerMessage(SpecialCounterUpdate.class);
 			log.debug(
 				"Special Attack Counter disabled: Partybase will broadcast supported local drains itself");
 		}
 	}
 
-	// Receive standard Special Attack Counter specs.
+	// Receive standard Special Attack Counter specs, from RuneLite's party or a relay server.
 	// The built-in Party sidebar is not required.
 	@Subscribe
-	public void onSpecialCounterUpdate(SpecialCounterUpdate event)
+	public void onPartybaseSpecialCounter(PartybaseSpecialCounter event)
 	{
-		if (!partyService.isInParty())
+		handleSpecialCounterUpdate(event.getUpdate());
+	}
+
+	void handleSpecialCounterUpdate(SpecialCounterUpdate event)
+	{
+		if (!partyLink.isInParty())
 		{
 			return;
 		}
 
-		PartyMember localMember = partyService.getLocalMember();
+		PartybaseMember localMember = partyLink.getLocalMember();
 		if (localMember != null && localMember.getMemberId() == event.getMemberId())
 		{
 			// Local detector already applied this spec.
 			return;
 		}
 
-		PartyMember sender = partyService.getMemberById(event.getMemberId());
+		PartybaseMember sender = partyLink.getMemberById(event.getMemberId());
 		if (sender == null)
 		{
 			// Ignore packets from departed senders.
@@ -600,8 +602,8 @@ public class DefenceModule implements PartybaseModule
 		final long receivedInPartyEpoch = partyEpoch;
 		clientThread.invoke(() ->
 		{
-			if (receivedInPartyEpoch != partyEpoch || !partyService.isInParty()
-				|| partyService.getMemberById(event.getMemberId()) == null)
+			if (receivedInPartyEpoch != partyEpoch || !partyLink.isInParty()
+				|| partyLink.getMemberById(event.getMemberId()) == null)
 			{
 				return;
 			}
@@ -671,7 +673,7 @@ public class DefenceModule implements PartybaseModule
 	@Subscribe
 	public void onPartybaseDefenceEncounterPresence(PartybaseDefenceEncounterPresence event)
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| event == null || event.getProtocolVersion() != PartybaseDefenceEncounterPresence.PROTOCOL_VERSION
 			|| !partyMessageBelongsToCurrentParty(event.getPartyId()))
 		{
@@ -699,7 +701,7 @@ public class DefenceModule implements PartybaseModule
 	@Subscribe
 	public void onPartybaseDefenceBossPresence(PartybaseDefenceBossPresence event)
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| event == null || event.getProtocolVersion() != PartybaseDefenceBossPresence.PROTOCOL_VERSION
 			|| !partyMessageBelongsToCurrentParty(event.getPartyId()))
 		{
@@ -791,7 +793,7 @@ public class DefenceModule implements PartybaseModule
 
 			// Return the requester's boss tile so it can attach the state.
 			long stateVersion = observeLocalStateVersion(sync);
-			partyService.send(new PartybaseDefenceSync(
+			partyLink.send(new PartybaseDefenceSync(
 				client.getWorld(), sync, event.getScopeType(), event.getScopeId(),
 				event.getBossX(), event.getBossY(), event.getBossPlane(), event.getHealthPercent(),
 				stateVersion));
@@ -820,12 +822,12 @@ public class DefenceModule implements PartybaseModule
 	// Allow only one peer outside the encounter to reply.
 	private boolean isPublicFallbackResponder(long requester)
 	{
-		PartyMember local = partyService.getLocalMember();
+		PartybaseMember local = partyLink.getLocalMember();
 		if (local == null)
 		{
 			return false;
 		}
-		for (PartyMember member : partyService.getMembers())
+		for (PartybaseMember member : partyLink.getMembers())
 		{
 			if (member.getMemberId() != requester && member.getMemberId() < local.getMemberId())
 			{
@@ -837,7 +839,7 @@ public class DefenceModule implements PartybaseModule
 
 	void broadcastKeris(NPC npc, int hitTick, long hitAtMillis)
 	{
-		if (!partyService.isInParty())
+		if (!partyLink.isInParty())
 		{
 			return;
 		}
@@ -858,14 +860,14 @@ public class DefenceModule implements PartybaseModule
 				client.getTopLevelWorldView())
 			: null;
 		rememberRaidScope(boss, scope);
-		partyService.send(new PartybaseDefenceKerisTimer(partyService.getPartyId(), client.getWorld(), boss,
+		partyLink.send(new PartybaseDefenceKerisTimer(partyLink.getPartyId(), client.getWorld(), boss,
 			scope.getType(), scope.getId(), npc.getId(), point, hitAtMillis, clockScope, raidTick));
 	}
 
 	@Subscribe
 	public void onPartybaseDefenceKerisTimer(PartybaseDefenceKerisTimer event)
 	{
-		if (event == null || !partyService.isInParty()
+		if (event == null || !partyLink.isInParty()
 			|| event.getProtocolVersion() != PartybaseDefenceKerisTimer.PROTOCOL_VERSION
 			|| !partyMessageBelongsToCurrentParty(event.getPartyId()))
 		{
@@ -889,9 +891,9 @@ public class DefenceModule implements PartybaseModule
 
 	private boolean acceptsKerisTimer(PartybaseDefenceKerisTimer event)
 	{
-		return partyService.isInParty()
+		return partyLink.isInParty()
 			&& partyMessageBelongsToCurrentParty(event.getPartyId())
-			&& partyService.getMemberById(event.getMemberId()) != null
+			&& partyLink.getMemberById(event.getMemberId()) != null
 			&& event.getWorld() == client.getWorld() && event.getBoss() != null;
 	}
 
@@ -947,7 +949,7 @@ public class DefenceModule implements PartybaseModule
 	@Subscribe
 	public void onPartybaseDefenceEncounterReset(PartybaseDefenceEncounterReset event)
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| event == null || event.getProtocolVersion() != PartybaseDefenceEncounterReset.PROTOCOL_VERSION
 			|| !partyMessageBelongsToCurrentParty(event.getPartyId()))
 		{
@@ -966,8 +968,8 @@ public class DefenceModule implements PartybaseModule
 				return;
 			}
 			knownPartybasePartyMembers.add(event.getMemberId());
-			if (!partyService.isInParty()
-				|| partyService.getMemberById(event.getMemberId()) == null
+			if (!partyLink.isInParty()
+				|| partyLink.getMemberById(event.getMemberId()) == null
 				|| event.getWorld() != client.getWorld())
 			{
 				return;
@@ -993,7 +995,7 @@ public class DefenceModule implements PartybaseModule
 
 	private void maybeBroadcastEncounterPresence()
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| client.getGameState() != GameState.LOGGED_IN)
 		{
 			lastPresenceScope = null;
@@ -1012,8 +1014,8 @@ public class DefenceModule implements PartybaseModule
 			return;
 		}
 
-		partyService.send(new PartybaseDefenceEncounterPresence(client.getWorld(), scope.getType(), scope.getId())
-			.withPartyId(partyService.getPartyId()));
+		partyLink.send(new PartybaseDefenceEncounterPresence(client.getWorld(), scope.getType(), scope.getId())
+			.withPartyId(partyLink.getPartyId()));
 		lastPresenceScope = scope;
 	}
 
@@ -1040,12 +1042,12 @@ public class DefenceModule implements PartybaseModule
 
 	private boolean isCurrentRemoteSender(PartyMemberMessage event)
 	{
-		if (!partyService.isInParty() || event == null
-			|| partyService.getMemberById(event.getMemberId()) == null)
+		if (!partyLink.isInParty() || event == null
+			|| partyLink.getMemberById(event.getMemberId()) == null)
 		{
 			return false;
 		}
-		PartyMember local = partyService.getLocalMember();
+		PartybaseMember local = partyLink.getLocalMember();
 		return local == null || local.getMemberId() != event.getMemberId();
 	}
 
@@ -1075,16 +1077,16 @@ public class DefenceModule implements PartybaseModule
 			// Apply the existing world and encounter checks to old packets.
 			return true;
 		}
-		if (!partyService.isInParty())
+		if (!partyLink.isInParty())
 		{
 			return false;
 		}
-		long livePartyId = partyService.getPartyId();
+		long livePartyId = partyLink.getPartyId();
 		if (livePartyId != 0L)
 		{
 			return eventPartyId == livePartyId;
 		}
-		// Use the last PartyChanged id while PartyService briefly reports zero.
+		// Use the last PartybasePartyChanged id while PartyLink briefly reports zero.
 		// Unknown sessions keep legacy compatibility.
 		return currentPartyId == null || currentPartyId == 0L || eventPartyId == currentPartyId;
 	}
@@ -1221,7 +1223,7 @@ public class DefenceModule implements PartybaseModule
 	@Subscribe
 	public void onPartybaseDefenceSync(PartybaseDefenceSync event)
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| event == null || !event.isSupportedProtocol()
 			|| !partyMessageBelongsToCurrentParty(event.getPartyId()))
 		{
@@ -1235,8 +1237,8 @@ public class DefenceModule implements PartybaseModule
 		final long receivedInPartyEpoch = partyEpoch;
 		clientThread.invoke(() ->
 		{
-			if (receivedInPartyEpoch != partyEpoch || !partyService.isInParty()
-				|| partyService.getMemberById(event.getMemberId()) == null)
+			if (receivedInPartyEpoch != partyEpoch || !partyLink.isInParty()
+				|| partyLink.getMemberById(event.getMemberId()) == null)
 			{
 				return;
 			}
@@ -1255,7 +1257,7 @@ public class DefenceModule implements PartybaseModule
 		for (int i = 0; i < count; i++)
 		{
 			PartybaseDefenceSync snapshot = pendingSnapshots.pollFirst();
-			if (partyService.getMemberById(snapshot.getMemberId()) == null)
+			if (partyLink.getMemberById(snapshot.getMemberId()) == null)
 			{
 				continue;
 			}
@@ -1275,7 +1277,7 @@ public class DefenceModule implements PartybaseModule
 
 	private void acceptPartybaseDefenceSync(PartybaseDefenceSync event)
 	{
-		if (!partyService.isInParty()
+		if (!partyLink.isInParty()
 			|| event.getWorld() != client.getWorld())
 		{
 			return;
@@ -1365,9 +1367,9 @@ public class DefenceModule implements PartybaseModule
 			return;
 		}
 
-		if (event != null && partyService.isInParty())
+		if (event != null && partyLink.isInParty())
 		{
-			partyService.send(event.withPartyId(partyService.getPartyId()));
+			partyLink.send(event.withPartyId(partyLink.getPartyId()));
 			log.debug("Broadcast BPD encounter reset boss={} scope={}:{} reason={}",
 				boss, scope.getType(), scope.getId(), reason);
 		}
@@ -1539,7 +1541,7 @@ public class DefenceModule implements PartybaseModule
 	// Group missed-history requests into one catch-up pass.
 	private void reconcileVisibleBosses()
 	{
-		if (!partyService.isInParty() || partyService.getLocalMember() == null
+		if (!partyLink.isInParty() || partyLink.getLocalMember() == null
 			|| client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
@@ -1620,7 +1622,7 @@ public class DefenceModule implements PartybaseModule
 		PartybaseDefenceBossPresence request = new PartybaseDefenceBossPresence(
 			client.getWorld(), boss, scope.getType(), scope.getId(),
 			point.getX(), point.getY(), point.getPlane(), healthPercent(npc))
-		.withPartyId(partyService.getPartyId());
+		.withPartyId(partyLink.getPartyId());
 		DefenceTracker.SyncState offer = revalidate ? defenceTracker.syncStateForActor(npc) : null;
 		if (offer != null && offer.isDrained())
 		{
@@ -1628,7 +1630,7 @@ public class DefenceModule implements PartybaseModule
 				point.getX(), point.getY(), point.getPlane(), request.getHealthPercent(),
 				observeLocalStateVersion(offer)));
 		}
-		partyService.send(request);
+		partyLink.send(request);
 		pendingJoinHistoryOffers.remove(boss);
 		bossesNeedingCatchUp.remove(boss);
 		log.debug("Broadcast BPD boss presence boss={} scope={}:{} actor={}",
@@ -1680,7 +1682,7 @@ public class DefenceModule implements PartybaseModule
 	// Send each local spec once.
 	private void broadcastLocalSpecEvents()
 	{
-		if (!partyService.isInParty())
+		if (!partyLink.isInParty())
 		{
 			return;
 		}
@@ -1703,7 +1705,7 @@ public class DefenceModule implements PartybaseModule
 				continue;
 			}
 			rememberRaidScope(boss, scope);
-			partyService.send(new PartybaseDefenceSpecEvent(client.getWorld(), scope.getType(), scope.getId(), boss,
+			partyLink.send(new PartybaseDefenceSpecEvent(client.getWorld(), scope.getType(), scope.getId(), boss,
 				npc.getIndex(), tile, scope.getType() == PartybaseDefenceSync.SCOPE_WORLD ? healthPercent(npc) : -1,
 				applied.getEntry(), applied.getPreviousId()));
 		}
@@ -1720,8 +1722,8 @@ public class DefenceModule implements PartybaseModule
 		long epoch = partyEpoch;
 		clientThread.invoke(() ->
 		{
-			if (epoch != partyEpoch || !partyService.isInParty()
-				|| partyService.getMemberById(event.getMemberId()) == null)
+			if (epoch != partyEpoch || !partyLink.isInParty()
+				|| partyLink.getMemberById(event.getMemberId()) == null)
 			{
 				return;
 			}
@@ -1739,7 +1741,7 @@ public class DefenceModule implements PartybaseModule
 
 	private void reconcilePartySpec(PartybaseDefenceSpecEvent event)
 	{
-		PartyMember sender = partyService.getMemberById(event.getMemberId());
+		PartybaseMember sender = partyLink.getMemberById(event.getMemberId());
 		BossDefence boss = event.getBoss();
 		long now = System.currentTimeMillis();
 		if (sender == null || boss == null || event.getWorld() != client.getWorld()
@@ -2133,7 +2135,7 @@ public class DefenceModule implements PartybaseModule
 			activeSyncScope = null;
 			return;
 		}
-		if (!partyService.isInParty())
+		if (!partyLink.isInParty())
 		{
 			// Party membership does not end an encounter.
 			activeSyncScope = null;

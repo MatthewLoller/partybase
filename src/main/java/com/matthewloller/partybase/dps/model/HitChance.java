@@ -574,12 +574,12 @@ public final class HitChance
 	}
 
 	private static final String[] MELEE_PRAYERS = {"CLARITY_OF_THOUGHT", "IMPROVED_REFLEXES", "INCREDIBLE_REFLEXES",
-		"CHIVALRY", "PIETY"};
+										"CHIVALRY", "PIETY"};
 	private static final int[] MELEE_PERCENT = {5, 10, 15, 15, 20};
 	private static final String[] RANGED_PRAYERS = {"SHARP_EYE", "HAWK_EYE", "EAGLE_EYE", "DEADEYE", "RIGOUR"};
 	private static final int[] RANGED_PERCENT = {5, 10, 15, 18, 20};
 	private static final String[] MAGIC_PRAYERS = {"MYSTIC_WILL", "MYSTIC_LORE", "MYSTIC_MIGHT", "MYSTIC_VIGOUR",
-		"AUGURY"};
+										"AUGURY"};
 	private static final int[] MAGIC_PERCENT = {5, 10, 15, 18, 25};
 
 	private static int prayerPercent(PlayerState p, String[] prayers, int[] percents)

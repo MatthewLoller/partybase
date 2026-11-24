@@ -25,6 +25,7 @@
 package com.matthewloller.partybase.data;
 
 import com.matthewloller.partybase.PartybasePlugin;
+import com.matthewloller.partybase.party.PartybaseMember;
 import java.util.Objects;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -35,13 +36,12 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.party.PartyMember;
 
 @Data
 @EqualsAndHashCode
 public class PartyPlayer
 {
-	private transient PartyMember member;
+	private transient PartybaseMember member;
 	private Stats stats;
 	private GameItem[] inventory;
 	private GameItem[] equipment;
@@ -72,14 +72,14 @@ public class PartyPlayer
 		this.spellbook = -1;
 	}
 
-	public PartyPlayer(final PartyMember member, final ItemManager itemManager)
+	public PartyPlayer(final PartybaseMember member, final ItemManager itemManager)
 	{
 		this();
 
 		updateMemberInfo(member, itemManager);
 	}
 
-	public PartyPlayer(final PartyMember member, final Client client, final ItemManager itemManager, final ClientThread clientThread)
+	public PartyPlayer(final PartybaseMember member, final Client client, final ItemManager itemManager, final ClientThread clientThread)
 	{
 		this();
 		this.staminaActive = client.getVarbitValue(VarbitID.STAMINA_DURATION) > 0;
@@ -139,9 +139,9 @@ public class PartyPlayer
 		return Math.min(stats.getBaseLevels().get(skill), allowVirtualLevels ? 126 : 99);
 	}
 
-	public boolean updateMemberInfo(final PartyMember newData, final ItemManager itemManager)
+	public boolean updateMemberInfo(final PartybaseMember newData, final ItemManager itemManager)
 	{
-		final PartyMember oldMember = member;
+		final PartybaseMember oldMember = member;
 		member = newData;
 
 		if (member.getInv() != null)

@@ -29,6 +29,9 @@ import static org.mockito.Mockito.*;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
+import com.matthewloller.partybase.party.events.PartybasePartyChanged;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -38,9 +41,6 @@ import net.runelite.api.IndexedObjectSet;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.events.PartyChanged;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Before;
 import org.junit.Test;
@@ -136,8 +136,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void websocketCallbackQueuesAndPartyChangeDiscardsSnapshot() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7)).thenReturn(sender);
 		ClientThread thread = mock(ClientThread.class);
@@ -146,7 +146,7 @@ public class PartySyncRegressionTest
 			((Runnable) i.getArgument(0)).run();
 			return null;
 		}).when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		PartybaseDefenceSync packet = new PartybaseDefenceSync(301, state(189, a), 0, 0, 0, 0, 0, 100, 1);
 		packet.setMemberId(7);
@@ -155,7 +155,7 @@ public class PartySyncRegressionTest
 		Field inbox = DefenceModule.class.getDeclaredField("pendingSnapshots");
 		inbox.setAccessible(true);
 		assertEquals(1, ((java.util.Deque<?>) inbox.get(plugin)).size());
-		plugin.onPartyChanged(new PartyChanged(null, null));
+		plugin.onPartybasePartyChanged(new PartybasePartyChanged(null, null));
 		assertTrue(((java.util.Deque<?>) inbox.get(plugin)).isEmpty());
 	}
 	@Test
@@ -207,10 +207,10 @@ public class PartySyncRegressionTest
 	@Test
 	public void snapshotInboxWaitsUntilLocalQueueSettles() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
+		PartyLink party = mock(PartyLink.class);
 		when(party.isInParty()).thenReturn(true);
-		when(party.getMemberById(0)).thenReturn(mock(PartyMember.class));
-		set("partyService", party);
+		when(party.getMemberById(0)).thenReturn(mock(PartybaseMember.class));
+		set("partyLink", party);
 		Field inbox = DefenceModule.class.getDeclaredField("pendingSnapshots");
 		inbox.setAccessible(true);
 		@SuppressWarnings("unchecked")
@@ -231,10 +231,10 @@ public class PartySyncRegressionTest
 	@Test
 	public void outOfRenderObservationDefersSnapshotUntilItsTargetResolves() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
+		PartyLink party = mock(PartyLink.class);
 		when(party.isInParty()).thenReturn(true);
-		when(party.getMemberById(0)).thenReturn(mock(PartyMember.class));
-		set("partyService", party);
+		when(party.getMemberById(0)).thenReturn(mock(PartybaseMember.class));
+		set("partyLink", party);
 
 		Field inbox = DefenceModule.class.getDeclaredField("pendingSnapshots");
 		inbox.setAccessible(true);
@@ -269,9 +269,9 @@ public class PartySyncRegressionTest
 	@Test
 	public void delayedCallbackFromPreviousPartyEpochIsDiscarded() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
+		PartyLink party = mock(PartyLink.class);
 		when(party.isInParty()).thenReturn(true);
-		when(party.getMemberById(7)).thenReturn(mock(PartyMember.class));
+		when(party.getMemberById(7)).thenReturn(mock(PartybaseMember.class));
 		ClientThread thread = mock(ClientThread.class);
 		java.util.List<Runnable> callbacks = new java.util.ArrayList<>();
 		doAnswer(i ->
@@ -279,12 +279,12 @@ public class PartySyncRegressionTest
 			callbacks.add(i.getArgument(0));
 			return null;
 		}).when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		PartybaseDefenceSync packet = new PartybaseDefenceSync(301, state(189, a), 0, 0, 0, 0, 0, 100, 1);
 		packet.setMemberId(7);
 		plugin.onPartybaseDefenceSync(packet);
-		plugin.onPartyChanged(new PartyChanged(null, null));
+		plugin.onPartybasePartyChanged(new PartybasePartyChanged(null, null));
 		callbacks.get(0).run();
 		Field inbox = DefenceModule.class.getDeclaredField("pendingSnapshots");
 		inbox.setAccessible(true);
@@ -339,8 +339,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void retransmittedSuppressedEchoCannotApplyAfterCreditIsConsumed() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7)).thenReturn(sender);
 		when(sender.getDisplayName()).thenReturn("Bob");
@@ -350,7 +350,7 @@ public class PartySyncRegressionTest
 			((Runnable) i.getArgument(0)).run();
 			return null;
 		}).when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		tracker.applySyncState(state(139, a, b), npc);
 		when(client.getTickCount()).thenReturn(100);
@@ -361,12 +361,12 @@ public class PartySyncRegressionTest
 		net.runelite.client.plugins.specialcounter.SpecialCounterUpdate packet = new net.runelite.client.plugins.specialcounter.SpecialCounterUpdate(
 			81, SpecialWeapon.BANDOS_GODSWORD, 50, 301, 2);
 		packet.setMemberId(7);
-		plugin.onSpecialCounterUpdate(packet);
-		plugin.onSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
 		assertFalse(tracker.hasUnprocessedSpecs());
 		assertEquals(2, tracker.specHistory().size());
 		when(client.getTickCount()).thenReturn(103);
-		plugin.onSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
 		tracker.onGameTick();
 		assertEquals(3, tracker.specHistory().size());
 	}
@@ -374,8 +374,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void duplicateStandardPartyObservationIsAppliedOnce() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7)).thenReturn(sender);
 		when(sender.getDisplayName()).thenReturn("Bob");
@@ -385,14 +385,14 @@ public class PartySyncRegressionTest
 			((Runnable) i.getArgument(0)).run();
 			return null;
 		}).when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 
 		net.runelite.client.plugins.specialcounter.SpecialCounterUpdate packet = new net.runelite.client.plugins.specialcounter.SpecialCounterUpdate(
 			81, SpecialWeapon.DRAGON_WARHAMMER, 1, 301, 2);
 		packet.setMemberId(7);
-		plugin.onSpecialCounterUpdate(packet);
-		plugin.onSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
 		tracker.onGameTick();
 
 		assertEquals(1, tracker.specHistory().size());
@@ -605,8 +605,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void presenceCallbackFromPreviousPartyIsDiscarded() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7L)).thenReturn(sender);
 		when(sender.getDisplayName()).thenReturn("Alice");
@@ -619,7 +619,7 @@ public class PartySyncRegressionTest
 			return null;
 		})
 		.when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		when(client.getTopLevelWorldView().isInstance()).thenReturn(true);
 
@@ -629,7 +629,7 @@ public class PartySyncRegressionTest
 		plugin.onPartybaseDefenceEncounterPresence(old);
 		assertEquals(1, queued.size());
 
-		plugin.onPartyChanged(new PartyChanged(null, null));
+		plugin.onPartybasePartyChanged(new PartybasePartyChanged(null, null));
 		for (Runnable runnable : queued)
 		{
 			runnable.run();
@@ -645,8 +645,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void oldPartyPresenceCannotPopulateNewPartyScope() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7L)).thenReturn(sender);
 		when(party.getPartyId()).thenReturn(2L);
@@ -659,7 +659,7 @@ public class PartySyncRegressionTest
 			return null;
 		})
 		.when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		when(client.getTopLevelWorldView().isInstance()).thenReturn(true);
 
@@ -678,8 +678,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void currentPartyPresenceIsAccepted() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7L)).thenReturn(sender);
 		when(party.getPartyId()).thenReturn(2L);
@@ -692,7 +692,7 @@ public class PartySyncRegressionTest
 			return null;
 		})
 		.when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		when(client.getTopLevelWorldView().isInstance()).thenReturn(true);
 
@@ -710,8 +710,8 @@ public class PartySyncRegressionTest
 	@Test
 	public void oldPartySnapshotCannotEnterPendingQueue() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
-		PartyMember sender = mock(PartyMember.class);
+		PartyLink party = mock(PartyLink.class);
+		PartybaseMember sender = mock(PartybaseMember.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getMemberById(7L)).thenReturn(sender);
 		when(party.getPartyId()).thenReturn(2L);
@@ -723,7 +723,7 @@ public class PartySyncRegressionTest
 			return null;
 		})
 		.when(thread).invoke(any(Runnable.class));
-		set("partyService", party);
+		set("partyLink", party);
 		set("clientThread", thread);
 		when(client.getTopLevelWorldView().isInstance()).thenReturn(true);
 
@@ -743,17 +743,17 @@ public class PartySyncRegressionTest
 	@Test
 	public void nonzeroPartyPacketCannotPassDuringTransientZeroPartyId() throws Exception
 	{
-		PartyService party = mock(PartyService.class);
+		PartyLink party = mock(PartyLink.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getPartyId()).thenReturn(0L);
-		set("partyService", party);
+		set("partyLink", party);
 		set("currentPartyId", 2L);
 
 		Method belongs = DefenceModule.class.getDeclaredMethod(
 				"partyMessageBelongsToCurrentParty", long.class);
 		belongs.setAccessible(true);
 
-		assertFalse("a packet from the previous party must not pass while PartyService is transiently zero",
+		assertFalse("a packet from the previous party must not pass while PartyLink is transiently zero",
 			(boolean) belongs.invoke(plugin, 1L));
 		assertTrue("a packet from the current party remains valid during the transient zero",
 			(boolean) belongs.invoke(plugin, 2L));
@@ -765,7 +765,7 @@ public class PartySyncRegressionTest
 	public void briefPartyRejoinPreservesEncounterState() throws Exception
 	{
 		tracker.applySyncState(state(189, a), npc);
-		plugin.onPartyChanged(new PartyChanged(null, null));
+		plugin.onPartybasePartyChanged(new PartybasePartyChanged(null, null));
 
 		assertEquals(189, tracker.state().getCurrent());
 		assertEquals(1, tracker.specHistory().size());
@@ -788,7 +788,7 @@ public class PartySyncRegressionTest
 		ctor.setAccessible(true);
 		versions.put(BossDefence.CHAOS_ELEMENTAL, ctor.newInstance(999L, 123));
 
-		plugin.onPartyChanged(new PartyChanged(null, null));
+		plugin.onPartybasePartyChanged(new PartybasePartyChanged(null, null));
 
 		assertTrue("party change must not retain old logical versions", versions.isEmpty());
 	}

@@ -29,6 +29,8 @@ import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.dps.model.PartyLeader;
 import com.matthewloller.partybase.dps.model.PartyNotices;
 import com.matthewloller.partybase.dps.model.RaidParty;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +46,6 @@ import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.WorldView;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
 
 /**
  * Everything about the RuneLite party: joining and leaving, the Partybase leader and kick,
@@ -71,7 +71,7 @@ class PartyManager
 	private static final String LAST_PARTY_KEY = "lastParty";
 
 	private final Client client;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 	private final PartybaseConfig config;
 	private final ChatNotifier chat;
 	private final RaidPartyDetector raidPartyDetector;
@@ -109,13 +109,13 @@ class PartyManager
 	private String rememberedSaved;
 
 	@Inject
-	PartyManager(Client client, PartyService partyService, PartybaseConfig config, ChatNotifier chat,
+	PartyManager(Client client, PartyLink partyLink, PartybaseConfig config, ChatNotifier chat,
 		RaidPartyDetector raidPartyDetector, ConfigManager configManager, MarkedTarget marked)
 	{
 		this.marked = marked;
 		this.configManager = configManager;
 		this.client = client;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 		this.config = config;
 		this.chat = chat;
 		this.raidPartyDetector = raidPartyDetector;
@@ -129,12 +129,12 @@ class PartyManager
 
 	boolean inParty()
 	{
-		return partyService.isInParty() && partyService.getLocalMember() != null;
+		return partyLink.isInParty() && partyLink.getLocalMember() != null;
 	}
 
 	void join(String name)
 	{
-		if (partyService.isInParty())
+		if (partyLink.isInParty())
 		{
 			return;
 		}
@@ -145,7 +145,7 @@ class PartyManager
 	/** A random name for a new party, or null when you are in a party already. */
 	String randomName()
 	{
-		return partyService.isInParty() ? null : partyService.generatePassphrase().replace('-', ' ');
+		return partyLink.isInParty() ? null : partyLink.generatePassphrase().replace('-', ' ');
 	}
 
 	/** Join the last party you were in again. */
@@ -171,7 +171,7 @@ class PartyManager
 
 	private void rememberLastParty()
 	{
-		String current = partyService.isInParty() ? partyService.getPartyPassphrase() : null;
+		String current = partyLink.isInParty() ? partyLink.getPartyPassphrase() : null;
 		if (current == null || RaidParty.isOwn(current) || current.equals(lastParty()))
 		{
 			return;
@@ -182,7 +182,7 @@ class PartyManager
 
 	void leave()
 	{
-		if (partyService.isInParty())
+		if (partyLink.isInParty())
 		{
 			ownPartyStopped = true;
 			changeParty(null);
@@ -192,12 +192,12 @@ class PartyManager
 
 	void kick(long memberId, String name)
 	{
-		if (!leader.isLeader() || !partyService.isInParty())
+		if (!leader.isLeader() || !partyLink.isInParty())
 		{
 			chat.info("only the party leader can kick.");
 			return;
 		}
-		partyService.send(message(PartybaseDpsPartyMessage.KICK, memberId));
+		partyLink.send(message(PartybaseDpsPartyMessage.KICK, memberId));
 		hidden.put(memberId, System.currentTimeMillis() + KICK_HIDE_MS);
 		notices.kicked(memberId);
 		chat.kicked("you removed " + name + " from the party.");
@@ -208,7 +208,7 @@ class PartyManager
 		// RuneLite just closes the connection, and the party server keeps listing you for minutes
 		send(PartybaseDpsPartyMessage.BYE);
 		changedByUs = true;
-		partyService.changeParty(passphrase);
+		partyLink.changeParty(passphrase);
 		leader.left();
 	}
 
@@ -239,7 +239,7 @@ class PartyManager
 
 	void onMessage(PartybaseDpsPartyMessage m)
 	{
-		PartyMember local = partyService.getLocalMember();
+		PartybaseMember local = partyLink.getLocalMember();
 		if (m.type == null || local == null || m.getMemberId() == local.getMemberId())
 		{
 			return;
@@ -366,8 +366,8 @@ class PartyManager
 		long outMs = System.currentTimeMillis() - loggedOutAtMs;
 		boolean stillOut = state == GameState.LOGIN_SCREEN && outMs >= LEAVE_AFTER_LOGOUT_MS - 500;
 		log.debug("Partybase logout check: state={}, out for {} ms, setting={}, in party={}", state, outMs,
-			config.leaveOnLogout(), partyService.isInParty());
-		if (stillOut && config.leaveOnLogout() && partyService.isInParty())
+			config.leaveOnLogout(), partyLink.isInParty());
+		if (stillOut && config.leaveOnLogout() && partyLink.isInParty())
 		{
 			changeParty(null);
 		}
@@ -376,7 +376,7 @@ class PartyManager
 	/** Closing the client: tell the party server you are gone, instead of leaving a stale member behind. */
 	void clientClosed()
 	{
-		if (config.leaveOnLogout() && partyService.isInParty())
+		if (config.leaveOnLogout() && partyLink.isInParty())
 		{
 			changeParty(null);
 		}
@@ -396,13 +396,13 @@ class PartyManager
 	private void updateMembership(long now)
 	{
 		List<Long> listed = new ArrayList<>();
-		for (PartyMember m : partyService.getMembers())
+		for (PartybaseMember m : partyLink.getMembers())
 		{
 			listed.add(m.getMemberId());
 		}
 		hidden.entrySet().removeIf(e -> now > e.getValue() || !listed.contains(e.getKey()));
 
-		PartyMember local = partyService.isInParty() ? partyService.getLocalMember() : null;
+		PartybaseMember local = partyLink.isInParty() ? partyLink.getLocalMember() : null;
 		if (local == null)
 		{
 			if (leader.isJoined())
@@ -436,7 +436,7 @@ class PartyManager
 		leaderName = leaderId == 0 ? null : leaderId == localMemberId ? Names.localName(client) : memberName(leaderId);
 
 		Map<Long, String> named = new HashMap<>();
-		for (PartyMember m : partyService.getMembers())
+		for (PartybaseMember m : partyLink.getMembers())
 		{
 			String n = Names.clean(m.getDisplayName());
 			if (n != null && m.getMemberId() != localMemberId && !hidden.containsKey(m.getMemberId()))
@@ -458,20 +458,20 @@ class PartyManager
 		List<String> others = notices.welcome(now);
 		if (others != null)
 		{
-			chat.info(PartyNotices.welcomeText(partyService.getPartyPassphrase(), others));
+			chat.info(PartyNotices.welcomeText(partyLink.getPartyPassphrase(), others));
 		}
 	}
 
 	private void updateInstanceMates()
 	{
 		WorldView wv = client.getTopLevelWorldView();
-		if (wv == null || !wv.isInstance() || !partyService.isInParty())
+		if (wv == null || !wv.isInstance() || !partyLink.isInParty())
 		{
 			instanceMates.clear();
 			return;
 		}
 		Set<String> party = new HashSet<>();
-		for (PartyMember m : partyService.getMembers())
+		for (PartybaseMember m : partyLink.getMembers())
 		{
 			String n = Names.clean(m.getDisplayName());
 			if (n != null)
@@ -496,7 +496,7 @@ class PartyManager
 			return;
 		}
 		RaidPartyDetector.Detected raid = raidPartyDetector.current();
-		String current = partyService.isInParty() ? partyService.getPartyPassphrase() : null;
+		String current = partyLink.isInParty() ? partyLink.getPartyPassphrase() : null;
 		loadRememberedRaidParty();
 		RaidParty.Action action = raidParty.tick(raid.partyName, current, inRaid);
 		saveRememberedRaidParty();
@@ -563,7 +563,7 @@ class PartyManager
 	/** A party lost without Partybase (RuneLite's Party panel, a dropped connection) stops own parties until logout. */
 	private void watchOwnParty()
 	{
-		String current = partyService.isInParty() ? partyService.getPartyPassphrase() : null;
+		String current = partyLink.isInParty() ? partyLink.getPartyPassphrase() : null;
 		boolean lostByOthers = lastParty != null && !lastParty.equals(current) && !changedByUs;
 		// a party you lose (left in RuneLite's panel, or a dropped connection) must not be swapped
 		// for an own party behind your back: you may want to join your friends again
@@ -586,31 +586,31 @@ class PartyManager
 	{
 		boolean wanted = ownPartyWanted;
 		ownPartyWanted = false;
-		if (!wanted || !config.ownParty() || ownPartyStopped || partyService.isInParty()
+		if (!wanted || !config.ownParty() || ownPartyStopped || partyLink.isInParty()
 			|| client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
 		}
-		changeParty(RaidParty.OWN_PREFIX + partyService.generatePassphrase().replace('-', ' '));
+		changeParty(RaidParty.OWN_PREFIX + partyLink.generatePassphrase().replace('-', ' '));
 		chat.info("you are in your own party now, so boss reports also work solo (setting: Own party).");
 	}
 
 	DpsPartyPanel.View view(String localName)
 	{
 		DpsPartyPanel.View v = new DpsPartyPanel.View();
-		v.inParty = partyService.isInParty();
+		v.inParty = partyLink.isInParty();
 		v.lastParty = lastParty();
 		if (!v.inParty)
 		{
 			return v;
 		}
-		v.code = partyService.getPartyPassphrase();
+		v.code = partyLink.getPartyPassphrase();
 		v.youLead = leader.isLeader();
 		v.autoLabel = RaidParty.isOwn(v.code) ? "Own party" : RaidParty.isAuto(v.code) ? "Raid party" : null;
 
 		long now = System.currentTimeMillis();
-		PartyMember local = partyService.getLocalMember();
-		for (PartyMember m : partyService.getMembers())
+		PartybaseMember local = partyLink.getLocalMember();
+		for (PartybaseMember m : partyLink.getMembers())
 		{
 			if (hidden.containsKey(m.getMemberId()))
 			{
@@ -676,7 +676,7 @@ class PartyManager
 		{
 			PartybaseDpsPartyMessage m = message(PartybaseDpsPartyMessage.UNMARK, 0);
 			m.npcKey = npcKey;
-			partyService.send(m);
+			partyLink.send(m);
 		}
 	}
 
@@ -699,7 +699,7 @@ class PartyManager
 		m.npcId = mark.npcId;
 		m.npcName = mark.name;
 		m.icon = mark.icon.name();
-		partyService.send(m);
+		partyLink.send(m);
 	}
 
 	/**
@@ -746,7 +746,7 @@ class PartyManager
 
 	private String memberName(long memberId)
 	{
-		PartyMember m = partyService.getMemberById(memberId);
+		PartybaseMember m = partyLink.getMemberById(memberId);
 		return m == null ? null : Names.clean(m.getDisplayName());
 	}
 
@@ -754,7 +754,7 @@ class PartyManager
 	{
 		if (inParty())
 		{
-			partyService.send(message(type, 0));
+			partyLink.send(message(type, 0));
 		}
 	}
 
@@ -768,7 +768,7 @@ class PartyManager
 	private List<Long> memberIds()
 	{
 		List<Long> ids = new ArrayList<>();
-		for (PartyMember m : partyService.getMembers())
+		for (PartybaseMember m : partyLink.getMembers())
 		{
 			if (!hidden.containsKey(m.getMemberId()))
 			{

@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -41,7 +42,6 @@ import net.runelite.api.Client;
 import net.runelite.api.IndexedObjectSet;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
 
@@ -278,7 +278,7 @@ public class PartySynchronizationCharacterizationTest
 	public void partySwitchRejectsOldNonzeroPartyIdButRetainsLegacyZero()
 	{
 		ClientNode node = new ClientNode();
-		PartyService party = mock(PartyService.class);
+		PartyLink party = mock(PartyLink.class);
 		when(party.isInParty()).thenReturn(true);
 		when(party.getPartyId()).thenReturn(2L);
 		node.useParty(party, 2L);
@@ -448,9 +448,9 @@ public class PartySynchronizationCharacterizationTest
 			}
 		}
 
-		private void useParty(PartyService party, long currentPartyId)
+		private void useParty(PartyLink party, long currentPartyId)
 		{
-			setPluginField("partyService", party);
+			setPluginField("partyLink", party);
 			setPluginField("currentPartyId", currentPartyId);
 		}
 

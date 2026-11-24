@@ -32,12 +32,12 @@ import com.matthewloller.partybase.dps.model.HealType;
 import com.matthewloller.partybase.dps.model.HealthWatcher;
 import com.matthewloller.partybase.dps.model.PlayerKind;
 import com.matthewloller.partybase.dps.model.TargetMatcher;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
 
 /**
  * The {@link PartybaseDpsUpdate} of every tick: collects what you did, sends it to the party, and
@@ -49,7 +49,7 @@ class PartyUpdates
 	private static final int MAX_SOURCE_LENGTH = 64;
 
 	private final Client client;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 	private final PartyManager party;
 	private final PartybaseConfig config;
 	private final FightTracker tracker;
@@ -59,11 +59,11 @@ class PartyUpdates
 
 	private PartybaseDpsUpdate outgoing = new PartybaseDpsUpdate();
 
-	PartyUpdates(Client client, PartyService partyService, PartyManager party, PartybaseConfig config,
+	PartyUpdates(Client client, PartyLink partyLink, PartyManager party, PartybaseConfig config,
 		FightTracker tracker, Bosses bosses, TargetMatcher matcher, DefenceDrains defence)
 	{
 		this.client = client;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 		this.party = party;
 		this.config = config;
 		this.tracker = tracker;
@@ -123,13 +123,13 @@ class PartyUpdates
 		}
 		update.world = client.getWorld();
 		update.name = Names.localName(client);
-		partyService.send(update);
+		partyLink.send(update);
 	}
 
 	/** Adds a party member's update to the fight. */
 	void receive(PartybaseDpsUpdate update)
 	{
-		PartyMember local = partyService.getLocalMember();
+		PartybaseMember local = partyLink.getLocalMember();
 		if (local != null && update.getMemberId() == local.getMemberId())
 		{
 			return;
@@ -184,7 +184,7 @@ class PartyUpdates
 		{
 			return name;
 		}
-		PartyMember member = partyService.getMemberById(update.getMemberId());
+		PartybaseMember member = partyLink.getMemberById(update.getMemberId());
 		return member == null ? null : Names.clean(member.getDisplayName());
 	}
 

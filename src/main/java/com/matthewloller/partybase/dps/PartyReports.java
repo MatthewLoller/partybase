@@ -33,8 +33,8 @@ import com.matthewloller.partybase.dps.model.KillCounts;
 import com.matthewloller.partybase.dps.model.MeterMode;
 import com.matthewloller.partybase.dps.model.RaidPoints;
 import com.matthewloller.partybase.dps.model.ReportFormatter;
+import com.matthewloller.partybase.party.PartyLink;
 import java.util.List;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.party.messages.PartyChatMessage;
 
 /**
@@ -48,7 +48,7 @@ class PartyReports
 	private static final long HAND_REPORT_MS = 10_000;
 
 	private final PartybaseConfig config;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 	private final PartyManager party;
 	private final ChatNotifier chat;
 	private final FightStorage storage;
@@ -57,11 +57,11 @@ class PartyReports
 	private final AutoReports autoReports = new AutoReports();
 	private long lastHandReportMs;
 
-	PartyReports(PartybaseConfig config, PartyService partyService, PartyManager party, ChatNotifier chat,
+	PartyReports(PartybaseConfig config, PartyLink partyLink, PartyManager party, ChatNotifier chat,
 		FightStorage storage, KillCounts killCounts, RaidPoints raidPoints)
 	{
 		this.config = config;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 		this.party = party;
 		this.chat = chat;
 		this.storage = storage;
@@ -132,7 +132,7 @@ class PartyReports
 		}
 		for (String line : lines(fight, kind, session, now))
 		{
-			partyService.send(new PartyChatMessage(line));
+			partyLink.send(new PartyChatMessage(line));
 		}
 		return true;
 	}

@@ -33,13 +33,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
+import com.matthewloller.partybase.party.PartyLink;
 import java.util.Arrays;
 import java.util.Collections;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
@@ -209,7 +209,7 @@ public class OrderingAndTargetCaptureRegressionTest
 		when(local.getInteracting()).thenReturn(newTarget);
 
 		LocalDefenceSpecDetector detector = new LocalDefenceSpecDetector(
-			client, mock(ClientThread.class), mock(PartyService.class),
+			client, mock(ClientThread.class), mock(PartyLink.class),
 			mock(PluginManager.class), mock(DefenceTracker.class));
 
 		assertSame("The spec belongs to the actor it was cast on", captured,
@@ -226,7 +226,7 @@ public class OrderingAndTargetCaptureRegressionTest
 		when(client.getLocalPlayer()).thenReturn(local);
 
 		LocalDefenceSpecDetector detector = new LocalDefenceSpecDetector(
-			client, mock(ClientThread.class), mock(PartyService.class),
+			client, mock(ClientThread.class), mock(PartyLink.class),
 			mock(PluginManager.class), mock(DefenceTracker.class));
 
 		assertSame(captured, detector.resolveTarget(captured));
@@ -240,7 +240,7 @@ public class OrderingAndTargetCaptureRegressionTest
 		when(client.getLocalPlayer()).thenReturn(local);
 
 		LocalDefenceSpecDetector detector = new LocalDefenceSpecDetector(
-			client, mock(ClientThread.class), mock(PartyService.class),
+			client, mock(ClientThread.class), mock(PartyLink.class),
 			mock(PluginManager.class), mock(DefenceTracker.class));
 
 		NPC captured = mock(NPC.class);

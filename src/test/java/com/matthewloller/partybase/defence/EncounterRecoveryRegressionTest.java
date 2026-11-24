@@ -39,6 +39,10 @@ import com.google.gson.Gson;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
+import com.matthewloller.partybase.party.events.PartybasePartyChanged;
+import com.matthewloller.partybase.party.events.PartybaseUserJoin;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,10 +59,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.events.PartyChanged;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
-import net.runelite.client.party.events.UserJoin;
 import net.runelite.client.plugins.specialcounter.SpecialCounterUpdate;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
@@ -166,7 +166,7 @@ public class EncounterRecoveryRegressionTest
 		assertNull(node.tracker.state());
 
 		when(node.party.isInParty()).thenReturn(true);
-		node.plugin.onPartyChanged(new PartyChanged("test-party", 0L));
+		node.plugin.onPartybasePartyChanged(new PartybasePartyChanged("test-party", 0L));
 		node.addMole();
 		node.receiveSync(stale, 1L, 0L);
 		node.tick();
@@ -191,7 +191,7 @@ public class EncounterRecoveryRegressionTest
 		holder.setPeer(joiner);
 		joiner.setPeer(holder);
 		when(joiner.party.isInParty()).thenReturn(true);
-		joiner.eventBus.post(new UserJoin(0L, joiner.localMember.getMemberId()));
+		joiner.eventBus.post(new PartybaseUserJoin(0L, joiner.localMember.getMemberId()));
 		joiner.tick();
 		holder.tick();
 		joiner.tick();
@@ -223,7 +223,7 @@ public class EncounterRecoveryRegressionTest
 		holder.setPeer(joiner);
 		joiner.setPeer(holder);
 		when(joiner.party.isInParty()).thenReturn(true);
-		joiner.eventBus.post(new UserJoin(0L, joiner.localMember.getMemberId()));
+		joiner.eventBus.post(new PartybaseUserJoin(0L, joiner.localMember.getMemberId()));
 		joiner.tick();
 		holder.tick();
 		joiner.tick();
@@ -259,7 +259,7 @@ public class EncounterRecoveryRegressionTest
 		holder.setPeer(joiner);
 		joiner.setPeer(holder);
 		when(joiner.party.isInParty()).thenReturn(true);
-		joiner.eventBus.post(new UserJoin(0L, joiner.localMember.getMemberId()));
+		joiner.eventBus.post(new PartybaseUserJoin(0L, joiner.localMember.getMemberId()));
 		joiner.tick();
 		holder.tick();
 		joiner.tick();
@@ -290,7 +290,7 @@ public class EncounterRecoveryRegressionTest
 		holder.setPeer(joiner);
 		joiner.setPeer(holder);
 		when(joiner.party.isInParty()).thenReturn(true);
-		joiner.eventBus.post(new UserJoin(0L, joiner.localMember.getMemberId()));
+		joiner.eventBus.post(new PartybaseUserJoin(0L, joiner.localMember.getMemberId()));
 		joiner.tick();
 		holder.tick();
 		joiner.tick();
@@ -321,7 +321,7 @@ public class EncounterRecoveryRegressionTest
 		holder.setPeer(joiner);
 		joiner.setPeer(holder);
 		when(joiner.party.isInParty()).thenReturn(true);
-		joiner.eventBus.post(new UserJoin(0L, joiner.localMember.getMemberId()));
+		joiner.eventBus.post(new PartybaseUserJoin(0L, joiner.localMember.getMemberId()));
 		joiner.tick();
 		holder.tick();
 		joiner.tick();
@@ -370,9 +370,9 @@ public class EncounterRecoveryRegressionTest
 		alice.apply(reduced);
 
 		bob.tracker.clearBossState(BossDefence.GIANT_MOLE, "test party rejoin");
-		PartyChanged changed = mock(PartyChanged.class);
+		PartybasePartyChanged changed = mock(PartybasePartyChanged.class);
 		when(changed.getPartyId()).thenReturn(2L);
-		bob.plugin.onPartyChanged(changed);
+		bob.plugin.onPartybasePartyChanged(changed);
 		when(bob.party.getPartyId()).thenReturn(2L);
 
 		bob.receiveSync(reduced, 1L, 2L);
@@ -392,7 +392,7 @@ public class EncounterRecoveryRegressionTest
 
 		bob.tick();
 
-		assertTrue("leaving PartyService is not evidence that the encounter ended",
+		assertTrue("leaving PartyLink is not evidence that the encounter ended",
 			bob.tracker.hasRememberedState(BossDefence.GIANT_MOLE));
 		bob.addMole();
 		bob.tick();
@@ -585,16 +585,16 @@ public class EncounterRecoveryRegressionTest
 		bob.apply(moleState(180));
 		when(bob.party.getPartyId()).thenReturn(2L);
 		when(bob.party.getLocalMember()).thenReturn(null);
-		bob.plugin.onPartyChanged(new PartyChanged("test-party", 2L));
+		bob.plugin.onPartybasePartyChanged(new PartybasePartyChanged("test-party", 2L));
 		bob.tick();
 		assertEquals(0, bob.sentBossPresenceRequests);
 
 		when(bob.party.getLocalMember()).thenReturn(bob.localMember);
-		bob.eventBus.post(new UserJoin(2L, REMOTE_MEMBER_ID));
+		bob.eventBus.post(new PartybaseUserJoin(2L, REMOTE_MEMBER_ID));
 		bob.tick();
 		assertEquals(0, bob.sentBossPresenceRequests);
 
-		bob.eventBus.post(new UserJoin(2L, bob.localMember.getMemberId()));
+		bob.eventBus.post(new PartybaseUserJoin(2L, bob.localMember.getMemberId()));
 		bob.tick();
 		bob.tick();
 		assertEquals(1, bob.sentBossPresenceRequests);
@@ -847,7 +847,7 @@ public class EncounterRecoveryRegressionTest
 		alice.tick();
 		SpecialCounterUpdate spec = new SpecialCounterUpdate(MOLE_INDEX, SpecialWeapon.DRAGON_WARHAMMER, 1, WORLD, 10);
 		spec.setMemberId(REMOTE_MEMBER_ID);
-		bob.plugin.onSpecialCounterUpdate(spec);
+		bob.plugin.handleSpecialCounterUpdate(spec);
 		bob.tick();
 		assertTrue(bob.tracker.hasUnprocessedSpecsForBoss(BossDefence.GIANT_MOLE));
 
@@ -1072,9 +1072,9 @@ public class EncounterRecoveryRegressionTest
 		@SuppressWarnings("unchecked")
 		private final IndexedObjectSet<Player> players = mock(IndexedObjectSet.class);
 		private final Player localPlayer = mock(Player.class);
-		private final PartyService party = mock(PartyService.class);
-		private final PartyMember localMember = mock(PartyMember.class);
-		private final PartyMember remoteMember = mock(PartyMember.class);
+		private final PartyLink party = mock(PartyLink.class);
+		private final PartybaseMember localMember = mock(PartybaseMember.class);
+		private final PartybaseMember remoteMember = mock(PartybaseMember.class);
 		private final ClientThread clientThread = mock(ClientThread.class);
 		private final PartybaseConfig config = mock(PartybaseConfig.class);
 		private final LocalDefenceSpecDetector localDetector = mock(LocalDefenceSpecDetector.class);
@@ -1180,7 +1180,7 @@ public class EncounterRecoveryRegressionTest
 			setPluginField("client", client);
 			setPluginField("config", config);
 			setPluginField("defenceTracker", tracker);
-			setPluginField("partyService", party);
+			setPluginField("partyLink", party);
 			setPluginField("clientThread", clientThread);
 			setPluginField("localSpecDetector", localDetector);
 			eventBus.register(plugin);
@@ -1195,7 +1195,7 @@ public class EncounterRecoveryRegressionTest
 		{
 			SpecialCounterUpdate event = new SpecialCounterUpdate(MOLE_INDEX, weapon, hit, WORLD, 3);
 			event.setMemberId(REMOTE_MEMBER_ID);
-			plugin.onSpecialCounterUpdate(event);
+			plugin.handleSpecialCounterUpdate(event);
 		}
 
 		private void receiveSpec(PartybaseDefenceSpecEvent packet)

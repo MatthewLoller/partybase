@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +57,6 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.specialcounter.SpecialCounterPlugin;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
@@ -265,7 +265,7 @@ public class LocalDefenceSpecDetectorRegressionTest
 		@SuppressWarnings("unchecked")
 		private final IndexedObjectSet<NPC> npcs = mock(IndexedObjectSet.class);
 		private final Player localPlayer = mock(Player.class);
-		private final PartyService party = mock(PartyService.class);
+		private final PartyLink party = mock(PartyLink.class);
 		private final PluginManager pluginManager = mock(PluginManager.class);
 		private final ItemContainer equipment = mock(ItemContainer.class);
 		private final Item weaponItem = mock(Item.class);

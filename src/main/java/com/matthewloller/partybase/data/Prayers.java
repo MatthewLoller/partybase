@@ -24,13 +24,13 @@
  */
 package com.matthewloller.partybase.data;
 
+import com.matthewloller.partybase.party.PartybaseMember;
 import com.matthewloller.partybase.ui.prayer.PrayerSprites;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Prayer;
-import net.runelite.client.party.PartyMember;
 
 public class Prayers
 {
@@ -117,7 +117,7 @@ public class Prayers
 	}
 
 	// PartyDataService handles transmitting currently enabled prayers
-	public void updateFromPartyMember(final PartyMember member)
+	public void updateFromPartyMember(final PartybaseMember member)
 	{
 		for (final Prayer p : Prayer.values())
 		{

@@ -46,6 +46,8 @@ import com.matthewloller.partybase.dps.model.RaidPoints;
 import com.matthewloller.partybase.dps.model.RaidScaling;
 import com.matthewloller.partybase.dps.model.TargetMatcher;
 import com.matthewloller.partybase.dps.model.WeaponStyles;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.events.PartybaseUserPart;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
@@ -91,9 +93,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ClientShutdown;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
-import net.runelite.client.party.PartyService;
-import net.runelite.client.party.WSClient;
-import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
@@ -140,10 +139,7 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 	private SlayerPluginService slayer;
 
 	@Inject
-	private PartyService partyService;
-
-	@Inject
-	private WSClient wsClient;
+	private PartyLink partyLink;
 
 	@Inject
 	private Gson gson;
@@ -221,8 +217,8 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 		overlayManager.add(headIconOverlay);
 		overlayManager.add(defenceOverlay);
 		overlayManager.add(markedOverlay);
-		wsClient.registerMessage(PartybaseDpsUpdate.class);
-		wsClient.registerMessage(PartybaseDpsPartyMessage.class);
+		partyLink.registerMessage(PartybaseDpsUpdate.class);
+		partyLink.registerMessage(PartybaseDpsPartyMessage.class);
 
 		panel = new DpsPanel(this, overlay);
 
@@ -245,13 +241,13 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 		});
 		NpcStats npcStats = NpcStats.load();
 		defence = new DefenceDrains(npcStats, raidScaling);
-		partyUpdates = new PartyUpdates(client, partyService, party, config, tracker, bosses, matcher, defence);
-		combat = new CombatEvents(client, partyService, config, tracker, bosses, matcher, healing, barrows, party,
+		partyUpdates = new PartyUpdates(client, partyLink, party, config, tracker, bosses, matcher, defence);
+		combat = new CombatEvents(client, partyLink, config, tracker, bosses, matcher, healing, barrows, party,
 			partyUpdates, defence, marked);
 		hitChance = new TargetHitChance(client, itemManager, slayer, npcStats, WeaponStyles.load(), defence,
 			raidScaling, combat, bosses);
 		raids = new RaidFights(client, chat, tracker);
-		reports = new PartyReports(config, partyService, party, chat, storage, killCounts, raidPoints);
+		reports = new PartyReports(config, partyLink, party, chat, storage, killCounts, raidPoints);
 		views = new MeterViews(config, tracker, storage, new BossHealth(client), barrows, party, fun, defence);
 	}
 
@@ -274,8 +270,8 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 			partyUpdates.clear();
 			marked.clear();
 		});
-		wsClient.unregisterMessage(PartybaseDpsUpdate.class);
-		wsClient.unregisterMessage(PartybaseDpsPartyMessage.class);
+		partyLink.unregisterMessage(PartybaseDpsUpdate.class);
+		partyLink.unregisterMessage(PartybaseDpsPartyMessage.class);
 		overlayManager.remove(overlay);
 		overlayManager.remove(headIconOverlay);
 		overlayManager.remove(defenceOverlay);
@@ -658,7 +654,7 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 	}
 
 	@Subscribe
-	public void onUserPart(UserPart e)
+	public void onPartybaseUserPart(PartybaseUserPart e)
 	{
 		clientThread.invokeLater(() -> party.onMemberLeft(e.getMemberId()));
 	}

@@ -33,6 +33,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -44,8 +46,6 @@ import net.runelite.api.Player;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.specialcounter.SpecialCounterUpdate;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Before;
@@ -71,8 +71,8 @@ public class ArchiveGuardianScopeRegressionTest
 	private IndexedObjectSet<Player> players;
 	private NPC guardian;
 	private Player sender;
-	private PartyService party;
-	private PartyMember senderMember;
+	private PartyLink party;
+	private PartybaseMember senderMember;
 
 	@Before
 	@SuppressWarnings("unchecked")
@@ -84,8 +84,8 @@ public class ArchiveGuardianScopeRegressionTest
 		players = mock(IndexedObjectSet.class);
 		guardian = mock(NPC.class);
 		sender = mock(Player.class);
-		party = mock(PartyService.class);
-		senderMember = mock(PartyMember.class);
+		party = mock(PartyLink.class);
+		senderMember = mock(PartybaseMember.class);
 
 		when(client.getWorld()).thenReturn(WORLD);
 		when(client.getTickCount()).thenReturn(100);
@@ -124,7 +124,7 @@ public class ArchiveGuardianScopeRegressionTest
 		setPluginField("client", client);
 		setPluginField("config", config);
 		setPluginField("defenceTracker", tracker);
-		setPluginField("partyService", party);
+		setPluginField("partyLink", party);
 		setPluginField("clientThread", clientThread);
 	}
 
@@ -194,7 +194,7 @@ public class ArchiveGuardianScopeRegressionTest
 		SpecialCounterUpdate packet = new SpecialCounterUpdate(
 			NPC_INDEX, SpecialWeapon.TONALZTICS_OF_RALOS, 2, WORLD, SENDER_PLAYER_ID);
 		packet.setMemberId(SENDER_MEMBER_ID);
-		plugin.onSpecialCounterUpdate(packet);
+		plugin.handleSpecialCounterUpdate(packet);
 	}
 
 	private void rememberSenderScope(int scopeId) throws Exception

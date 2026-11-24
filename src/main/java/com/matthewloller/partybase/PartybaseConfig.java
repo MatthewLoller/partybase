@@ -68,6 +68,40 @@ public interface PartybaseConfig extends Config
 		}
 	}
 
+	String SERVER_URL_KEY = "serverUrl";
+	String SERVER_KEY_KEY = "serverKey";
+
+	@ConfigSection(name = "Party server", description = "Use your own Partybase relay server instead of RuneLite's party"
+			+ " server", position = 1, closedByDefault = true)
+	String partyServerSection = "partyServer";
+
+	@ConfigItem(
+		keyName = SERVER_URL_KEY,
+		name = "Server URL",
+		description = "<html>A Partybase relay server (wss://...). Empty: use RuneLite's party server.<br>"
+			+ "When set, all Partybase party data goes to this server instead, so everyone in the party must use"
+			+ " the same server.</html>",
+		position = 0,
+		section = partyServerSection
+	)
+	default String serverUrl()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = SERVER_KEY_KEY,
+		name = "Server key",
+		description = "Your personal key for the server above. Leave empty if the server needs no key.",
+		position = 1,
+		secret = true,
+		section = partyServerSection
+	)
+	default String serverKey()
+	{
+		return "";
+	}
+
 	@ConfigSection(name = "Party info", description = "The Party info tab: member banners and party controls", position = 0)
 	String partyInfoSection = "partyInfo";
 

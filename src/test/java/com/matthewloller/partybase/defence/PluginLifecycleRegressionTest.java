@@ -29,6 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.party.PartyLink;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import net.runelite.api.Client;
@@ -36,8 +37,6 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SkillIconManager;
-import net.runelite.client.party.PartyService;
-import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
@@ -47,27 +46,25 @@ import org.junit.Test;
 public class PluginLifecycleRegressionTest
 {
 	private DefenceModule plugin;
-	private WSClient wsClient;
+	private PartyLink partyLink;
 
 	@Before
 	public void setUp() throws Exception
 	{
 		plugin = new DefenceModule();
-		wsClient = mock(WSClient.class);
 		Client client = mock(Client.class);
 		ClientThread clientThread = mock(ClientThread.class);
-		PartyService partyService = mock(PartyService.class);
+		partyLink = mock(PartyLink.class);
 		PluginManager pluginManager = mock(PluginManager.class);
 		PartybaseConfig config = mock(PartybaseConfig.class);
 
 		when(pluginManager.getPlugins()).thenReturn(Collections.emptyList());
-		when(partyService.isInParty()).thenReturn(false);
+		when(partyLink.isInParty()).thenReturn(false);
 		DefenceTracker tracker = new DefenceTracker(client, config);
 
 		set("client", client);
 		set("clientThread", clientThread);
-		set("partyService", partyService);
-		set("wsClient", wsClient);
+		set("partyLink", partyLink);
 		set("pluginManager", pluginManager);
 		set("overlayManager", mock(OverlayManager.class));
 		set("itemManager", mock(ItemManager.class));
@@ -85,12 +82,12 @@ public class PluginLifecycleRegressionTest
 		plugin.startUp(mock(com.matthewloller.partybase.PartybasePlugin.class));
 		plugin.shutDown();
 
-		verify(wsClient).unregisterMessage(PartybaseDefenceSync.class);
-		verify(wsClient).unregisterMessage(PartybaseDefenceSpecEvent.class);
-		verify(wsClient).unregisterMessage(PartybaseDefenceEncounterPresence.class);
-		verify(wsClient).unregisterMessage(PartybaseDefenceBossPresence.class);
-		verify(wsClient).unregisterMessage(PartybaseDefenceEncounterReset.class);
-		verify(wsClient).unregisterMessage(PartybaseDefenceKerisTimer.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceSync.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceSpecEvent.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceEncounterPresence.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceBossPresence.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceEncounterReset.class);
+		verify(partyLink).unregisterMessage(PartybaseDefenceKerisTimer.class);
 	}
 
 	private void set(String name, Object value) throws Exception

@@ -24,6 +24,7 @@
  */
 package com.matthewloller.partybase.data;
 
+import com.matthewloller.partybase.party.PartybaseMember;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
@@ -32,7 +33,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Experience;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
-import net.runelite.client.party.PartyMember;
 
 @Getter
 @Setter
@@ -91,7 +91,7 @@ public class Stats
 		return combatLevel;
 	}
 
-	public void handleMemberUpdate(final PartyMember member)
+	public void handleMemberUpdate(final PartybaseMember member)
 	{
 		for (final Skill s : Skill.values())
 		{

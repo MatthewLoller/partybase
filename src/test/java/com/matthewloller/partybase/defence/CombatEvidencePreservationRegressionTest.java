@@ -40,6 +40,8 @@ import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import com.matthewloller.partybase.party.PartyLink;
+import com.matthewloller.partybase.party.PartybaseMember;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -54,8 +56,6 @@ import net.runelite.api.Player;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.party.PartyMember;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.specialcounter.SpecialCounterUpdate;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
@@ -543,15 +543,15 @@ public class CombatEvidencePreservationRegressionTest
 	{
 		private final Map<Integer, NPC> npcsByIndex = new LinkedHashMap<>();
 		private final Map<Integer, Player> playersById = new LinkedHashMap<>();
-		private final Map<Long, PartyMember> membersById = new LinkedHashMap<>();
+		private final Map<Long, PartybaseMember> membersById = new LinkedHashMap<>();
 		private final Client client = mock(Client.class);
 		private final WorldView worldView = mock(WorldView.class);
 		@SuppressWarnings("unchecked")
 		private final IndexedObjectSet<NPC> npcs = mock(IndexedObjectSet.class);
 		@SuppressWarnings("unchecked")
 		private final IndexedObjectSet<Player> players = mock(IndexedObjectSet.class);
-		private final PartyService party = mock(PartyService.class);
-		private final PartyMember localMember = mock(PartyMember.class);
+		private final PartyLink party = mock(PartyLink.class);
+		private final PartybaseMember localMember = mock(PartybaseMember.class);
 		private final Player localPlayer = mock(Player.class);
 		private final PartybaseConfig config = mock(PartybaseConfig.class);
 		private final DefenceTracker tracker;
@@ -595,7 +595,7 @@ public class CombatEvidencePreservationRegressionTest
 			setPluginField("client", client);
 			setPluginField("config", config);
 			setPluginField("defenceTracker", tracker);
-			setPluginField("partyService", party);
+			setPluginField("partyLink", party);
 			setPluginField("clientThread", clientThread);
 		}
 
@@ -620,7 +620,7 @@ public class CombatEvidencePreservationRegressionTest
 
 		private void addPartyMember(long memberId, String name, int playerId, boolean rendered)
 		{
-			PartyMember member = mock(PartyMember.class);
+			PartybaseMember member = mock(PartybaseMember.class);
 			when(member.getMemberId()).thenReturn(memberId);
 			when(member.getDisplayName()).thenReturn(name);
 			membersById.put(memberId, member);
@@ -645,7 +645,7 @@ public class CombatEvidencePreservationRegressionTest
 			assertNotNull(membersById.get(memberId));
 			SpecialCounterUpdate packet = new SpecialCounterUpdate(npcIndex, weapon, hit, world, playerId);
 			packet.setMemberId(memberId);
-			plugin.onSpecialCounterUpdate(packet);
+			plugin.handleSpecialCounterUpdate(packet);
 		}
 
 		@SuppressWarnings("unchecked")

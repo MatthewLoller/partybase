@@ -24,6 +24,7 @@
  */
 package com.matthewloller.partybase.defence;
 
+import com.matthewloller.partybase.party.PartyLink;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
@@ -47,7 +48,6 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.party.PartyService;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.specialcounter.SpecialCounterUpdate;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
@@ -61,7 +61,7 @@ class LocalDefenceSpecDetector
 	private static final int RALOS_UNKNOWN = -1;
 	private final Client client;
 	private final ClientThread clientThread;
-	private final PartyService partyService;
+	private final PartyLink partyLink;
 	private final PluginManager pluginManager;
 	private final DefenceTracker defenceTracker;
 
@@ -80,13 +80,13 @@ class LocalDefenceSpecDetector
 	LocalDefenceSpecDetector(
 		Client client,
 		ClientThread clientThread,
-		PartyService partyService,
+		PartyLink partyLink,
 		PluginManager pluginManager,
 		DefenceTracker defenceTracker)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
-		this.partyService = partyService;
+		this.partyLink = partyLink;
 		this.pluginManager = pluginManager;
 		this.defenceTracker = defenceTracker;
 	}
@@ -373,13 +373,13 @@ class LocalDefenceSpecDetector
 		defenceTracker.queueLocal(used, npcIndex, rawHit, world, playerName, npc,
 			hitsplatObservedAtMillis > 0 ? hitsplatObservedAtMillis : System.currentTimeMillis());
 
-		// Special Attack Counter already sends this when active.
-		if (partyService.isInParty() && !isSpecialCounterActive())
+		// Special Attack Counter already sends this on RuneLite's party when active; it can't reach a relay server.
+		if (partyLink.isInParty() && (partyLink.isRelay() || !isSpecialCounterActive()))
 		{
 			if (local != null)
 			{
-				partyService.send(new SpecialCounterUpdate(npcIndex, used, rawHit, world, local.getId()));
-				log.debug("Broadcast local defence spec through Hub Party session: {}", used);
+				partyLink.send(new SpecialCounterUpdate(npcIndex, used, rawHit, world, local.getId()));
+				log.debug("Broadcast local defence spec to the party: {}", used);
 			}
 		}
 	}

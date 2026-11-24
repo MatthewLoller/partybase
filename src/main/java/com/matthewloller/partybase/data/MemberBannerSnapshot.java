@@ -25,8 +25,8 @@
 package com.matthewloller.partybase.data;
 
 
+import com.matthewloller.partybase.party.PartybaseMember;
 import lombok.Value;
-import net.runelite.client.party.PartyMember;
 
 @Value
 class MemberBannerSnapshot
@@ -35,7 +35,7 @@ class MemberBannerSnapshot
 	int specEnergy;
 	int combatLevel;
 
-	static MemberBannerSnapshot of(PartyMember m, int combatLevel)
+	static MemberBannerSnapshot of(PartybaseMember m, int combatLevel)
 	{
 		return new MemberBannerSnapshot(m.getDisplayName(), m.getSpecEnergy(), combatLevel);
 	}
