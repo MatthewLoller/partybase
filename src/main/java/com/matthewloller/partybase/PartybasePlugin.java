@@ -3,6 +3,7 @@ package com.matthewloller.partybase;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.Getter;
+import com.matthewloller.partybase.defence.DefenceModule;
 import com.matthewloller.partybase.dps.DpsModule;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -128,6 +129,10 @@ public class PartybasePlugin extends Plugin
 	@Inject
 	private DpsModule dps;
 
+	/** The defence tracker (ported from Better Party Defence). */
+	@Inject
+	private DefenceModule defence;
+
 	@Provides
 	PartybaseConfig provideConfig(ConfigManager configManager)
 	{
@@ -154,6 +159,8 @@ public class PartybasePlugin extends Plugin
 	{
 		dps.startUp(getPluginDirectory());
 		eventBus.register(dps);
+		defence.startUp(this);
+		eventBus.register(defence);
 
 		panel = new PartybasePanel(this);
 		navButton = NavigationButton.builder()
@@ -219,6 +226,8 @@ public class PartybasePlugin extends Plugin
 
 		eventBus.unregister(dps);
 		dps.shutDown();
+		eventBus.unregister(defence);
+		defence.shutDown();
 	}
 
 	@Subscribe

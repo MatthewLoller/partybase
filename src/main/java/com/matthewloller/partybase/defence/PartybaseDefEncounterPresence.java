@@ -1,0 +1,54 @@
+package com.matthewloller.partybase.defence;
+
+import lombok.ToString;
+import net.runelite.client.party.messages.PartyMemberMessage;
+
+// Encounter heartbeat used to validate standard party specs.
+@ToString(doNotUseGetters = true)
+public class PartybaseDefEncounterPresence extends PartyMemberMessage {
+	public static final int PROTOCOL_VERSION = 1;
+
+	private int protocolVersion;
+	private int world;
+	private int scopeType;
+	private int scopeId;
+	private long sentAtMillis;
+	// Sender party session; zero is legacy.
+	@ToString.Exclude
+	private long partyId;
+
+	// Gson.
+	public PartybaseDefEncounterPresence() {
+	}
+
+	public PartybaseDefEncounterPresence(int world, int scopeType, int scopeId) {
+		this.protocolVersion = PROTOCOL_VERSION;
+		this.world = world;
+		this.scopeType = scopeType;
+		this.scopeId = scopeId;
+		this.sentAtMillis = System.currentTimeMillis();
+	}
+
+	public int getProtocolVersion() {
+		return protocolVersion;
+	}
+	public int getWorld() {
+		return world;
+	}
+	public int getScopeType() {
+		return scopeType;
+	}
+	public int getScopeId() {
+		return scopeId;
+	}
+	public long getSentAtMillis() {
+		return sentAtMillis;
+	}
+	public long getPartyId() {
+		return partyId;
+	}
+	public PartybaseDefEncounterPresence withPartyId(long partyId) {
+		this.partyId = partyId;
+		return this;
+	}
+}
