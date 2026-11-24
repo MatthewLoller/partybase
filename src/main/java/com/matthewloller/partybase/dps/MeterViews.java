@@ -107,7 +107,9 @@ class MeterViews
 	BossMeter bossMeter(long now)
 	{
 		Fight shown = tracker.getBossDisplayFight();
-		if (!config.bossMeter() || config.bossOnly() || shown == null || !shown.hasBossMeter())
+		// in boss-only mode the overall meter already shows the boss, unless it is turned off
+		if (!config.bossMeter() || (config.bossOnly() && config.showOverallMeter()) || shown == null
+			|| !shown.hasBossMeter())
 		{
 			return null;
 		}

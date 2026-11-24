@@ -88,8 +88,8 @@ class DpsPanel extends JPanel
 		/** The live Barrows run time, or null without a run. */
 		String barrowsRunTime;
 		boolean barrowsRunPaused;
-		/** The party's marked target, or null. */
-		String markedTarget;
+		/** The party's marked targets, in marking order. */
+		List<MarkedTarget.Mark> marks = new ArrayList<>();
 		/** You may mark and clear targets (you lead, or you are solo). */
 		boolean canMark;
 	}
@@ -127,9 +127,8 @@ class DpsPanel extends JPanel
 	 */
 	private final DpsPartyPanel partyPanel;
 	private final SidebarMeter meter;
-	private final JPanel markRow = new JPanel(new BorderLayout(4, 0));
-	private final JLabel markLabel = new JLabel();
-	private final JButton clearMark;
+	private final JPanel markList = new JPanel();
+	private final JButton clearMarks;
 	private final JCheckBox bossOnlyBox = new JCheckBox("Boss only");
 	private final JPanel content = new JPanel();
 	private volatile String selectedId = LIVE_CHOICE;
@@ -147,7 +146,7 @@ class DpsPanel extends JPanel
 		this.plugin = plugin;
 		this.partyPanel = new DpsPartyPanel(plugin);
 		this.meter = new SidebarMeter(overlay);
-		this.clearMark = button("Clear", "Stop focusing on the marked target", plugin::clearMark);
+		this.clearMarks = button("Clear all", "Remove every marked target", () -> plugin.clearMark(null));
 		setBorder(new EmptyBorder(8, 8, 8, 8));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		setLayout(new BorderLayout(0, 8));
@@ -184,16 +183,13 @@ class DpsPanel extends JPanel
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 		content.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		markLabel.setForeground(GOLD);
-		markLabel.setFont(FontManager.getRunescapeSmallFont());
-		markRow.setOpaque(false);
-		markRow.add(markLabel, BorderLayout.CENTER);
-		markRow.add(clearMark, BorderLayout.EAST);
-		markRow.setVisible(false);
+		markList.setLayout(new BoxLayout(markList, BoxLayout.Y_AXIS));
+		markList.setOpaque(false);
+		markList.setVisible(false);
 
 		JPanel meterAndMark = new JPanel(new BorderLayout(0, 4));
 		meterAndMark.setOpaque(false);
-		meterAndMark.add(markRow, BorderLayout.NORTH);
+		meterAndMark.add(markList, BorderLayout.NORTH);
 		meterAndMark.add(meter, BorderLayout.CENTER);
 
 		JPanel north = new JPanel(new BorderLayout(0, 8));
@@ -280,6 +276,45 @@ class DpsPanel extends JPanel
 		return time + "  " + (f.partOf != null ? "> " : "") + f.title() + "  " + Format.preciseDuration(f.durationMs(now));
 	}
 
+	/** One row per marked target: icon, name, and (for the leader) a remove button. */
+	private void updateMarks(List<MarkedTarget.Mark> marks, boolean canMark)
+	{
+		markList.removeAll();
+		markList.setVisible(!marks.isEmpty());
+		if (!marks.isEmpty())
+		{
+			JLabel title = bold("Marked targets", GOLD);
+			title.setToolTipText("Marked by the party leader: tracked as a boss fight until they die. "
+				+ "Shift right-click a monster to mark it.");
+			JPanel head = new JPanel(new BorderLayout(4, 0));
+			head.setOpaque(false);
+			head.add(title, BorderLayout.CENTER);
+			if (canMark && marks.size() > 1)
+			{
+				head.add(clearMarks, BorderLayout.EAST);
+			}
+			markList.add(head);
+		}
+		for (MarkedTarget.Mark mark : marks)
+		{
+			JLabel name = new JLabel(mark.name, mark.icon.image(14), JLabel.LEFT);
+			name.setForeground(mark.icon.getColor());
+			name.setFont(FontManager.getRunescapeSmallFont());
+			name.setIconTextGap(6);
+			JPanel row = new JPanel(new BorderLayout(4, 0));
+			row.setOpaque(false);
+			row.setBorder(new EmptyBorder(2, 0, 0, 0));
+			row.add(name, BorderLayout.CENTER);
+			if (canMark)
+			{
+				row.add(button("x", "Remove this mark", () -> plugin.clearMark(mark.key)), BorderLayout.EAST);
+			}
+			markList.add(row);
+		}
+		markList.revalidate();
+		markList.repaint();
+	}
+
 	void setPartyName(String name)
 	{
 		partyPanel.setPartyName(name);
@@ -292,11 +327,7 @@ class DpsPanel extends JPanel
 		{
 			updateChoices(d.choices);
 			bossOnlyBox.setSelected(d.bossOnly);
-			markRow.setVisible(d.markedTarget != null);
-			markLabel.setText(d.markedTarget == null ? "" : "Target: " + d.markedTarget);
-			markLabel.setToolTipText(d.markedTarget == null ? null
-				: "Marked by the party leader: tracked as a boss fight until it dies");
-			clearMark.setVisible(d.canMark);
+			updateMarks(d.marks, d.canMark);
 			partyPanel.update(d.party);
 		}
 		finally

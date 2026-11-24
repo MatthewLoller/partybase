@@ -11,8 +11,8 @@ import net.runelite.client.party.messages.PartyMemberMessage;
  * <li>{@code kick}: the leader asks the {@link #target} member to leave</li>
  * <li>{@code bye}: the member leaves now (the party server keeps listing it for minutes)</li>
  * <li>{@code here}: answer to {@code hi} from members who don't lead, so the new member learns join times</li>
- * <li>{@code mark}: the leader marks the NPC {@link #npcKey} as the party's target</li>
- * <li>{@code unmark}: the leader clears the marked target</li>
+ * <li>{@code mark}: the leader marks the NPC {@link #npcKey} as a target with {@link #icon}, or changes its icon</li>
+ * <li>{@code unmark}: the leader removes the mark on {@link #npcKey}, or all marks when it is null</li>
  * </ul>
  * Every message carries {@link #since}, when the sender joined the party: the earliest one is the party's age,
  * and the member who joined first leads when nobody says who does.
@@ -39,6 +39,8 @@ public class PartybaseDpsPartyMessage extends PartyMemberMessage
 	public String npcKey;
 	public int npcId;
 	public String npcName;
+	/** TargetIcon name of the mark. */
+	public String icon;
 
 	public PartybaseDpsPartyMessage()
 	{

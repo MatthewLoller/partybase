@@ -227,7 +227,7 @@ class PartyManager
 				if (leader.isLeader())
 				{
 					send(PartybaseDpsPartyMessage.LEADER);
-					sendMark();
+					sendMarks();
 				}
 				else
 				{
@@ -250,16 +250,28 @@ class PartyManager
 			case PartybaseDpsPartyMessage.MARK:
 				if (m.getMemberId() == leader.getLeader() && m.npcKey != null)
 				{
-					marked.set(m.npcKey, m.npcId, Names.clean(m.npcName));
-					chat.info(memberNameOr(m.getMemberId(), "the leader") + " marked " + marked.getName()
-						+ " as the target.");
+					boolean isNew = !marked.is(m.npcKey);
+					TargetIcon icon = TargetIcon.of(m.icon);
+					String name = Names.clean(m.npcName);
+					marked.set(m.npcKey, m.npcId, name, icon);
+					if (isNew)
+					{
+						chat.info(memberNameOr(m.getMemberId(), "the leader") + " marked " + name + " ("
+							+ icon.getLabel().toLowerCase() + ").");
+					}
 				}
 				break;
 			case PartybaseDpsPartyMessage.UNMARK:
-				if (m.getMemberId() == leader.getLeader() && marked.isSet())
+				if (m.getMemberId() == leader.getLeader())
 				{
-					marked.clear();
-					chat.info("the marked target was cleared.");
+					if (m.npcKey == null)
+					{
+						marked.clear();
+					}
+					else
+					{
+						marked.remove(m.npcKey);
+					}
 				}
 				break;
 			case PartybaseDpsPartyMessage.KICK:
@@ -611,33 +623,57 @@ class PartyManager
 		return !inParty() || leader.isLeader();
 	}
 
-	/** Marks the NPC for you and, when you lead, for the party. */
-	void mark(String npcKey, int npcId, String npcName)
+	/** Marks the NPC (or changes its icon) for you and, when you lead, for the party. */
+	void mark(String npcKey, int npcId, String npcName, TargetIcon icon)
 	{
-		marked.set(npcKey, npcId, npcName);
-		chat.info("marked " + npcName + " as the target. Its damage is tracked as a boss fight until it dies.");
-		sendMark();
+		boolean isNew = !marked.is(npcKey);
+		marked.set(npcKey, npcId, npcName, icon);
+		if (isNew)
+		{
+			chat.info("marked " + npcName + " (" + icon.getLabel().toLowerCase() + "). It is tracked as a boss"
+				+ " fight until it dies.");
+		}
+		sendMark(marked.get(npcKey));
 	}
 
-	void unmark()
+	/** Removes one mark, or all of them when npcKey is null. */
+	void unmark(String npcKey)
 	{
-		marked.clear();
+		if (npcKey == null)
+		{
+			marked.clear();
+		}
+		else
+		{
+			marked.remove(npcKey);
+		}
 		if (isLeader())
 		{
-			send(PartybaseDpsPartyMessage.UNMARK);
+			PartybaseDpsPartyMessage m = message(PartybaseDpsPartyMessage.UNMARK, 0);
+			m.npcKey = npcKey;
+			partyService.send(m);
 		}
 	}
 
-	private void sendMark()
+	private void sendMarks()
 	{
-		if (!isLeader() || !marked.isSet())
+		for (MarkedTarget.Mark mark : marked.all())
+		{
+			sendMark(mark);
+		}
+	}
+
+	private void sendMark(MarkedTarget.Mark mark)
+	{
+		if (!isLeader() || mark == null)
 		{
 			return;
 		}
 		PartybaseDpsPartyMessage m = message(PartybaseDpsPartyMessage.MARK, 0);
-		m.npcKey = marked.getKey();
-		m.npcId = marked.getNpcId();
-		m.npcName = marked.getName();
+		m.npcKey = mark.key;
+		m.npcId = mark.npcId;
+		m.npcName = mark.name;
+		m.icon = mark.icon.name();
 		partyService.send(m);
 	}
 

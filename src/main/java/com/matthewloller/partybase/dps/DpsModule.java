@@ -36,7 +36,9 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.KeyCode;
+import net.runelite.api.Menu;
 import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
@@ -68,6 +70,7 @@ import net.runelite.client.party.WSClient;
 import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
 /**
@@ -402,15 +405,13 @@ public class DpsModule implements FightTracker.Listener
 		NPC npc = e.getNpc();
 		String key = TargetMatcher.key(client.getWorld(), npc.getIndex());
 		defence.remove(key);
-		boolean wasMarked = marked.is(key);
-		if (wasMarked)
+		MarkedTarget.Mark mark = marked.remove(key);
+		boolean wasMarked = mark != null;
+		if (wasMarked && npc.isDead())
 		{
-			marked.clear();
-			if (npc.isDead())
-			{
-				chat.info(Names.clean(npc.getName()) + " (the marked target) is dead."
-					+ (party.isLeader() && config.autoBossReport() ? " The boss report goes to the party." : ""));
-			}
+			boolean last = marked.isEmpty();
+			chat.info(mark.name + " (" + mark.icon.getLabel().toLowerCase() + ") is dead."
+				+ (last && party.isLeader() && config.autoBossReport() ? " The boss report goes to the party." : ""));
 		}
 		if (npc.isDead())
 		{
@@ -572,23 +573,44 @@ public class DpsModule implements FightTracker.Listener
 			return;
 		}
 		String key = TargetMatcher.key(client.getWorld(), npc.getIndex());
-		boolean isMarked = marked.is(key);
-		client.createMenuEntry(-1)
-			.setOption(isMarked ? "Unmark target" : "Mark target")
+		String name = Names.clean(npc.getName());
+		MarkedTarget.Mark current = marked.get(key);
+		if (current != null)
+		{
+			client.createMenuEntry(-1)
+				.setOption("Unmark target")
+				.setTarget(e.getTarget())
+				.setType(MenuAction.RUNELITE)
+				.onClick(click -> clientThread.invokeLater(() ->
+				{
+					party.unmark(key);
+					updatePanel();
+				}));
+		}
+		// the parent entry marks with the next free icon; its submenu picks one
+		TargetIcon next = current != null ? current.icon : marked.nextIcon();
+		MenuEntry parent = client.createMenuEntry(-1)
+			.setOption(current != null ? "Change target icon" : "Mark target")
 			.setTarget(e.getTarget())
 			.setType(MenuAction.RUNELITE)
-			.onClick(click ->
-			{
-				if (isMarked)
-				{
-					party.unmark();
-				}
-				else
-				{
-					party.mark(key, npc.getId(), Names.clean(npc.getName()));
-				}
-				updatePanel();
-			});
+			.onClick(click -> markNpc(key, npc.getId(), name, next));
+		Menu icons = parent.createSubMenu();
+		for (TargetIcon icon : TargetIcon.values())
+		{
+			icons.createMenuEntry(-1)
+				.setOption(ColorUtil.wrapWithColorTag(icon.getLabel(), icon.getColor()))
+				.setType(MenuAction.RUNELITE)
+				.onClick(click -> markNpc(key, npc.getId(), name, icon));
+		}
+	}
+
+	private void markNpc(String key, int npcId, String name, TargetIcon icon)
+	{
+		clientThread.invokeLater(() ->
+		{
+			party.mark(key, npcId, name, icon);
+			updatePanel();
+		});
 	}
 
 	// ---- party ----
@@ -694,7 +716,7 @@ public class DpsModule implements FightTracker.Listener
 		}
 		DpsPanel.Data data = views.panelData(p.getSelectedId(), localName(), System.currentTimeMillis(),
 			hitChanceCache);
-		data.markedTarget = marked.getName();
+		data.marks = marked.all();
 		data.canMark = party.canMark();
 		SwingUtilities.invokeLater(() -> p.update(data));
 	}
@@ -732,26 +754,20 @@ public class DpsModule implements FightTracker.Listener
 		});
 	}
 
-	/** Clears the marked target (DPS tab button). */
-	void clearMark()
+	/** Removes one mark, or all with null (DPS tab buttons). */
+	void clearMark(String key)
 	{
 		clientThread.invoke(() ->
 		{
-			party.unmark();
+			party.unmark(key);
 			updatePanel();
 		});
 	}
 
-	/** The marked target's name for the overlay, or null. */
-	String markedName()
+	/** The current marks; read by the marked target overlay. */
+	List<MarkedTarget.Mark> marks()
 	{
-		return marked.getName();
-	}
-
-	/** Target key of the marked NPC, or null; read by the marked target overlay. */
-	String markedKey()
-	{
-		return marked.getKey();
+		return marked.all();
 	}
 
 	// ---- read by the Partybase panel (any thread) ----

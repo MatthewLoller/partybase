@@ -95,7 +95,8 @@ class DpsOverlay extends Overlay
 	{
 		MeterMode mode = config.overlayMode();
 		FightReport report = plugin.overlayReport();
-		List<FightReport.PlayerRow> rows = report == null ? Collections.emptyList() : report.sorted(mode);
+		boolean overall = config.showOverallMeter();
+		List<FightReport.PlayerRow> rows = report == null || !overall ? Collections.emptyList() : report.sorted(mode);
 		BossMeter boss = plugin.bossMeter();
 		List<FightReport.PlayerRow> bossRows = boss == null ? Collections.emptyList() : boss.report.sorted(MeterMode.DAMAGE);
 		String barrows = plugin.barrowsRunTime();
@@ -109,7 +110,7 @@ class DpsOverlay extends Overlay
 		FontMetrics fm = g.getFontMetrics();
 
 		int y = 0;
-		if (!rows.isEmpty() || !hideWhenEmpty)
+		if (overall && (!rows.isEmpty() || !hideWhenEmpty))
 		{
 			y = drawMainMeter(g, fm, width, compact, mode, report, rows);
 		}

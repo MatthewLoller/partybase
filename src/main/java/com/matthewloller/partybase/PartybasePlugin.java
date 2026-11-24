@@ -500,11 +500,7 @@ public class PartybasePlugin extends Plugin
 
 	private void handlePlayerDataUpdate(long memberId, boolean breakingBannerChange)
 	{
-		if (isLocalPlayer(memberId))
-		{
-			return;
-		}
-
+		// you are shown too (collapsed, see PartybasePanel), from the data PartyDataService keeps for you
 		final PartyPlayer player = partyMembers.get(memberId);
 		if (player == null)
 		{
@@ -557,11 +553,7 @@ public class PartybasePlugin extends Plugin
 	@Subscribe
 	public void onPartybaseBatchedChange(PartybaseBatchedChange e)
 	{
-		if (isLocalPlayer(e.getMemberId()))
-		{
-			return;
-		}
-
+		// your own changes come back from the party server too; they keep your banner up to date
 		// create new PartyPlayer for this member if they don't already exist
 		final PartyPlayer player = partyMembers.computeIfAbsent(
 				e.getMemberId(),
@@ -587,7 +579,7 @@ public class PartybasePlugin extends Plugin
 	@Subscribe
 	public void onPartyMemberAvatar(PartyMemberAvatar e)
 	{
-		if (isLocalPlayer(e.getMemberId()) || partyMembers.get(e.getMemberId()) == null)
+		if (partyMembers.get(e.getMemberId()) == null)
 		{
 			return;
 		}

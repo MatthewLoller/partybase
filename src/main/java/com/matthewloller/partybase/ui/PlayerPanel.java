@@ -100,6 +100,8 @@ public class PlayerPanel extends JPanel
 	@Setter
 	private boolean showInfo;
 	private final Map<Integer, Boolean> tabMap = new HashMap<>();
+	/** False for your own banner: it stays collapsed. */
+	private boolean expandable = true;
 	/** The banner and its stat boxes: the parts that take clicks. */
 	private final Component[] bannerParts;
 
@@ -135,7 +137,7 @@ public class PlayerPanel extends JPanel
 					@Override
 					public void mousePressed(MouseEvent e)
 					{
-						if (e.getButton() == MouseEvent.BUTTON1)
+						if (e.getButton() == MouseEvent.BUTTON1 && expandable)
 						{
 							ImageIcon retrieve = (ImageIcon) expandIcon.getIcon();
 							BufferedImage buffered = (BufferedImage) retrieve.getImage();
@@ -167,6 +169,23 @@ public class PlayerPanel extends JPanel
 
 		revalidate();
 		repaint();
+	}
+
+	/** Keeps the panel collapsed to its banner and hides the expand arrow (used for yourself). */
+	public void setExpandable(final boolean expandable)
+	{
+		this.expandable = expandable;
+		banner.getExpandIcon().setVisible(expandable);
+		if (!expandable && showInfo)
+		{
+			showInfo = false;
+			updatePanel();
+		}
+	}
+
+	public boolean isExpandable()
+	{
+		return expandable;
 	}
 
 	/** Adds a mouse listener to every part of the banner that takes clicks. */

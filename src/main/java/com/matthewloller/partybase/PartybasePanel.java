@@ -269,9 +269,11 @@ class PartybasePanel extends PluginPanel
 	void renderSidebar()
 	{
 		// Sort by their RSN first; If it doesn't exist sort by their Discord name instead
+		// you first, then the others by name
 		final List<PartyPlayer> players = plugin.getPartyMembers().values()
 			.stream()
-			.sorted(Comparator.comparing(o -> Strings.isNullOrEmpty(o.getUsername()) ? o.getMember().getDisplayName() : o.getUsername()))
+			.sorted(Comparator.<PartyPlayer, Boolean>comparing(o -> !plugin.isLocalPlayer(o.getMember().getMemberId()))
+				.thenComparing(o -> Strings.isNullOrEmpty(o.getUsername()) ? o.getMember().getDisplayName() : o.getUsername()))
 			.collect(Collectors.toList());
 
 		for (final PartyPlayer player : players)
@@ -304,6 +306,28 @@ class PartybasePanel extends PluginPanel
 
 		panel = new PlayerPanel(player, plugin.getConfig(), plugin.spriteManager, plugin.itemManager);
 		final long memberId = player.getMember().getMemberId();
+		final boolean you = plugin.isLocalPlayer(memberId);
+		if (you)
+		{
+			panel.setExpandable(false);
+		}
+		playerPanelMap.put(memberId, panel);
+		panel.updatePlayerData(player, hasBreakingBannerChange);
+		if (you)
+		{
+			// you go at the top
+			basePanel.add(panel, 0);
+		}
+		else
+		{
+			basePanel.add(panel);
+		}
+		basePanel.revalidate();
+		basePanel.repaint();
+		if (you)
+		{
+			return;
+		}
 		panel.addBannerMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -318,11 +342,6 @@ class PartybasePanel extends PluginPanel
 				maybeShowLeaderMenu(e, memberId);
 			}
 		});
-		playerPanelMap.put(player.getMember().getMemberId(), panel);
-		panel.updatePlayerData(player, hasBreakingBannerChange);
-		basePanel.add(panel);
-		basePanel.revalidate();
-		basePanel.repaint();
 	}
 
 	/** The leader right-clicks a member: "Make party leader". */
@@ -356,6 +375,10 @@ class PartybasePanel extends PluginPanel
 	{
 		for (PlayerPanel panel : playerPanelMap.values())
 		{
+			if (!panel.isExpandable())
+			{
+				continue;
+			}
 			panel.setShowInfo(expand);
 			panel.getBanner().setExpandIcon(expand);
 			panel.updatePanel();

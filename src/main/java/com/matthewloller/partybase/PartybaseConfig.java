@@ -265,10 +265,23 @@ public interface PartybaseConfig extends Config
 
 
 	@ConfigItem(
+		keyName = "showOverallMeter",
+		name = "Overall meter",
+		description = "The damage meter for the whole fight, on the game screen and in the DPS tab. Off: only the"
+			+ " boss meter shows (bosses and marked targets).",
+		position = 6,
+		section = overlaySection
+	)
+	default boolean showOverallMeter()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "bossMeter",
 		name = "Boss meter",
 		description = "A second meter with only the damage on the boss, over the boss time",
-		position = 6,
+		position = 7,
 		section = overlaySection
 	)
 	default boolean bossMeter()
@@ -280,7 +293,7 @@ public interface PartybaseConfig extends Config
 		keyName = "showDefence",
 		name = "Defence",
 		description = "Above a monster: its defence after special attacks that lower it (DWH, BGS, Elder maul, Arclight...)",
-		position = 7,
+		position = 8,
 		section = overlaySection
 	)
 	default boolean showDefence()
@@ -293,7 +306,7 @@ public interface PartybaseConfig extends Config
 		name = "Hit chance",
 		description = "Above the monster you attack: your chance to hit it with a normal attack, from your levels, "
 			+ "prayers, gear and attack style",
-		position = 8,
+		position = 9,
 		section = overlaySection
 	)
 	default boolean showHitChance()

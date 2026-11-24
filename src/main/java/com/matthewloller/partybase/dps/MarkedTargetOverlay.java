@@ -7,6 +7,9 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Shape;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
@@ -17,11 +20,10 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
-/** Outlines the party's marked target and writes "Target" above it. */
+/** Outlines each marked target in its icon colour and draws its icon above it. */
 class MarkedTargetOverlay extends Overlay
 {
-	private static final Color COLOR = new Color(255, 196, 0);
-	private static final Color FILL = new Color(255, 196, 0, 30);
+	private static final int ICON_SIZE = 18;
 
 	private final Client client;
 	private final DpsModule dps;
@@ -38,32 +40,35 @@ class MarkedTargetOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D g)
 	{
-		String key = dps.markedKey();
-		WorldView wv = key == null ? null : client.getTopLevelWorldView();
+		List<MarkedTarget.Mark> marks = dps.marks();
+		WorldView wv = marks.isEmpty() ? null : client.getTopLevelWorldView();
 		if (wv == null)
 		{
 			return null;
 		}
+		Map<String, MarkedTarget.Mark> byKey = new HashMap<>();
+		marks.forEach(m -> byKey.put(m.key, m));
 		for (NPC npc : wv.npcs())
 		{
-			if (npc != null && key.equals(TargetMatcher.key(client.getWorld(), npc.getIndex())))
+			MarkedTarget.Mark mark = npc == null ? null : byKey.get(TargetMatcher.key(client.getWorld(), npc.getIndex()));
+			if (mark != null)
 			{
-				draw(g, npc);
-				break;
+				draw(g, npc, mark.icon);
 			}
 		}
 		return null;
 	}
 
-	private static void draw(Graphics2D g, NPC npc)
+	private static void draw(Graphics2D g, NPC npc, TargetIcon icon)
 	{
+		Color color = icon.getColor();
 		Shape hull = npc.getConvexHull();
 		if (hull != null)
 		{
 			g.setStroke(new BasicStroke(2));
-			g.setColor(COLOR);
+			g.setColor(color);
 			g.draw(hull);
-			g.setColor(FILL);
+			g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
 			g.fill(hull);
 		}
 		else
@@ -71,14 +76,14 @@ class MarkedTargetOverlay extends Overlay
 			Polygon tile = npc.getCanvasTilePoly();
 			if (tile != null)
 			{
-				OverlayUtil.renderPolygon(g, tile, COLOR);
+				OverlayUtil.renderPolygon(g, tile, color);
 			}
 		}
-		String text = "Target";
-		Point at = npc.getCanvasTextLocation(g, text, npc.getLogicalHeight() + 60);
+		// above the head, clear of the defence and hit chance lines
+		Point at = npc.getCanvasTextLocation(g, "", npc.getLogicalHeight() + 90);
 		if (at != null)
 		{
-			OverlayUtil.renderTextLocation(g, at, text, COLOR);
+			icon.draw(g, at.getX(), at.getY() - ICON_SIZE / 2.0, ICON_SIZE);
 		}
 	}
 }
