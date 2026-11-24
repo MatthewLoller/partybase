@@ -58,43 +58,43 @@ public enum PrayerSprites
 	PROTECT_FROM_MISSILES(Prayer.PROTECT_FROM_MISSILES, SpriteID.Prayeron.PROTECT_FROM_MISSILES, SpriteID.Prayeroff.PROTECT_FROM_MISSILES_DISABLED, 20816),
 	PROTECT_FROM_MELEE(Prayer.PROTECT_FROM_MELEE, SpriteID.Prayeron.PROTECT_FROM_MELEE, SpriteID.Prayeroff.PROTECT_FROM_MELEE_DISABLED, 20817),
 	EAGLE_EYE(Prayer.EAGLE_EYE, SpriteID.Prayeron.EAGLE_EYE, SpriteID.Prayeroff.EAGLE_EYE_DISABLED, 20825)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
-					return !DEADEYE.isUnlocked(client);
-				}
-			},
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
+			return !DEADEYE.isUnlocked(client);
+		}
+	},
 	DEADEYE(Prayer.DEADEYE, SpriteID.Prayeron.DEADEYE, SpriteID.Prayeroff.DEADEYE_DISABLED, 25939)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
 
-					boolean inLms = client.getVarbitValue(VarbitID.BR_INGAME) != 0;
-					boolean deadeye = client.getVarbitValue(VarbitID.PRAYER_DEADEYE_UNLOCKED) != 0;
-					return deadeye && !inLms;
-				}
-			},
+			boolean inLms = client.getVarbitValue(VarbitID.BR_INGAME) != 0;
+			boolean deadeye = client.getVarbitValue(VarbitID.PRAYER_DEADEYE_UNLOCKED) != 0;
+			return deadeye && !inLms;
+		}
+	},
 
 	MYSTIC_MIGHT(Prayer.MYSTIC_MIGHT, SpriteID.Prayeron.MYSTIC_MIGHT, SpriteID.Prayeroff.MYSTIC_MIGHT_DISABLED, 20826)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
-					return !MYSTIC_VIGOUR.isUnlocked(client);
-				}
-			},
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
+			return !MYSTIC_VIGOUR.isUnlocked(client);
+		}
+	},
 	MYSTIC_VIGOUR(Prayer.MYSTIC_VIGOUR, SpriteID.Prayeron.MYSTIC_VIGOUR, SpriteID.Prayeroff.MYSTIC_VIGOUR_DISABLED, 27034)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
-					boolean inLms = client.getVarbitValue(VarbitID.BR_INGAME) != 0;
-					boolean vigour = client.getVarbitValue(VarbitID.PRAYER_MYSTIC_VIGOUR_UNLOCKED) != 0;
-					return vigour && !inLms;
-				}
-			},
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
+			boolean inLms = client.getVarbitValue(VarbitID.BR_INGAME) != 0;
+			boolean vigour = client.getVarbitValue(VarbitID.PRAYER_MYSTIC_VIGOUR_UNLOCKED) != 0;
+			return vigour && !inLms;
+		}
+	},
 	RETRIBUTION(Prayer.RETRIBUTION, SpriteID.Prayeron.RETRIBUTION, SpriteID.Prayeroff.RETRIBUTION_DISABLED, 20818),
 	REDEMPTION(Prayer.REDEMPTION, SpriteID.Prayeron.REDEMPTION, SpriteID.Prayeroff.REDEMPTION_DISABLED, 20819),
 	SMITE(Prayer.SMITE, SpriteID.Prayeron.SMITE, SpriteID.Prayeroff.SMITE_DISABLED, 20820),
@@ -102,21 +102,21 @@ public enum PrayerSprites
 
 	CHIVALRY(Prayer.CHIVALRY, SpriteID.Prayeron.CHIVALRY, SpriteID.Prayeroff.CHIVALRY_DISABLED, 20828),
 	PIETY(Prayer.PIETY, SpriteID.Prayeron.PIETY, SpriteID.Prayeroff.PIETY_DISABLED, 20829)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
-					return !ZEAL.isUnlocked(client);
-				}
-			},
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
+			return !ZEAL.isUnlocked(client);
+		}
+	},
 	ZEAL(Prayer.ZEAL, SpriteID.Prayeron.ZEAL, SpriteID.Prayeroff.ZEAL_DISABLED, 22350)
-			{
-				@Override
-				public boolean isUnlocked(Client client)
-				{
-					return client.getVarbitValue(VarbitID.PRAYER_ZEAL_UNLOCKED) != 0;
-				}
-			},
+	{
+		@Override
+		public boolean isUnlocked(Client client)
+		{
+			return client.getVarbitValue(VarbitID.PRAYER_ZEAL_UNLOCKED) != 0;
+		}
+	},
 	RIGOUR(Prayer.RIGOUR, SpriteID.Prayeron.RIGOUR, SpriteID.Prayeroff.RIGOUR_DISABLED, 20827),
 	AUGURY(Prayer.AUGURY, SpriteID.Prayeron.AUGURY, SpriteID.Prayeroff.AUGURY_DISABLED, 20830),
 	;

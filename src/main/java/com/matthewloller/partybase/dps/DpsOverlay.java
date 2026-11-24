@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps;
 
 import com.matthewloller.partybase.PartybaseConfig;
@@ -28,7 +53,8 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 class DpsOverlay extends Overlay
 {
 	/** Bar colors for other players, picked per player name. */
-	private static final Color[] PALETTE = {
+	private static final Color[] PALETTE =
+	{
 		new Color(0x4FA3E0), new Color(0x8BC34A), new Color(0xE57BB0), new Color(0xB08A5A),
 		new Color(0x7E7EE6), new Color(0x26C6A0), new Color(0xF0883E), new Color(0x2F6FD6),
 		new Color(0xD04848), new Color(0x9C4FD6), new Color(0x4E9E8C), new Color(0xE0E0E0),
@@ -191,7 +217,7 @@ class DpsOverlay extends Overlay
 
 		// each column is as wide as its widest cell, laid out from the right
 		boolean maxHit = config.showMaxHit();
-		String[] labels = compact ? new String[]{""} : columnLabels(mode, maxHit);
+		String[] labels = compact ? new String[] {""} : columnLabels(mode, maxHit);
 		double total = report.total(mode);
 		String[][] cells = new String[shown][];
 		int[] colW = new int[labels.length];
@@ -201,7 +227,7 @@ class DpsOverlay extends Overlay
 		}
 		for (int i = 0; i < shown; i++)
 		{
-			cells[i] = compact ? new String[]{compactValue(rows.get(i), mode)} : columnValues(rows.get(i), mode, total, maxHit);
+			cells[i] = compact ? new String[] {compactValue(rows.get(i), mode)} : columnValues(rows.get(i), mode, total, maxHit);
 			for (int c = 0; c < labels.length; c++)
 			{
 				colW[c] = Math.max(colW[c], fm.stringWidth(cells[i][c]));
@@ -283,14 +309,14 @@ class DpsOverlay extends Overlay
 		switch (mode)
 		{
 			case DPS:
-				return maxHit ? new String[]{"DPS", "Damage", "Max", "%"} : new String[]{"DPS", "Damage", "%"};
+				return maxHit ? new String[] {"DPS", "Damage", "Max", "%"} : new String[] {"DPS", "Damage", "%"};
 			case HEALING:
-				return new String[]{"Healing", "OH", "%"};
+				return new String[] {"Healing", "OH", "%"};
 			case DAMAGE_TAKEN:
-				return new String[]{"Taken", "%"};
+				return new String[] {"Taken", "%"};
 			case DAMAGE:
 			default:
-				return maxHit ? new String[]{"Damage", "Max", "DPS", "%"} : new String[]{"Damage", "DPS", "%"};
+				return maxHit ? new String[] {"Damage", "Max", "DPS", "%"} : new String[] {"Damage", "DPS", "%"};
 		}
 	}
 
@@ -303,17 +329,17 @@ class DpsOverlay extends Overlay
 		{
 			case DPS:
 				return maxHit
-					? new String[]{Format.dps(row.dps), Format.amount(row.damage), max, Format.percent(row.percent)}
-					: new String[]{Format.dps(row.dps), Format.amount(row.damage), Format.percent(row.percent)};
+					? new String[] {Format.dps(row.dps), Format.amount(row.damage), max, Format.percent(row.percent)}
+					: new String[] {Format.dps(row.dps), Format.amount(row.damage), Format.percent(row.percent)};
 			case HEALING:
-				return new String[]{Format.amount(value), row.overheal > 0 ? Format.percent(row.overhealPercent()) : "-", share};
+				return new String[] {Format.amount(value), row.overheal > 0 ? Format.percent(row.overhealPercent()) : "-", share};
 			case DAMAGE_TAKEN:
-				return new String[]{Format.amount(value), share};
+				return new String[] {Format.amount(value), share};
 			case DAMAGE:
 			default:
 				return maxHit
-					? new String[]{Format.amount(row.damage), max, Format.dps(row.dps), Format.percent(row.percent)}
-					: new String[]{Format.amount(row.damage), Format.dps(row.dps), Format.percent(row.percent)};
+					? new String[] {Format.amount(row.damage), max, Format.dps(row.dps), Format.percent(row.percent)}
+					: new String[] {Format.amount(row.damage), Format.dps(row.dps), Format.percent(row.percent)};
 		}
 	}
 

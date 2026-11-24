@@ -105,9 +105,9 @@ public class PlayerInventoryPanel extends JPanel
 	public String getRunePouchHoverText(final GameItem runePouch, final GameItem[] contents)
 	{
 		final String contentNames = Arrays.stream(contents)
-				.filter(Objects::nonNull)
-				.map(GameItem::getDisplayName)
-				.collect(Collectors.joining("<br>"));
+			.filter(Objects::nonNull)
+			.map(GameItem::getDisplayName)
+			.collect(Collectors.joining("<br>"));
 
 		if (contentNames.isEmpty())
 		{
@@ -115,9 +115,9 @@ public class PlayerInventoryPanel extends JPanel
 		}
 
 		return "<html>"
-				+ runePouch.getDisplayName()
-				+ "<br><br>"
-				+ contentNames
-				+ "</html>";
+			+ runePouch.getDisplayName()
+			+ "<br><br>"
+			+ contentNames
+			+ "</html>";
 	}
 }

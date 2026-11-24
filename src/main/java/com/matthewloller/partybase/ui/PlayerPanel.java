@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, TheStonedTurtle <https://github.com/TheStonedTurtle>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -105,7 +106,7 @@ public class PlayerPanel extends JPanel
 	private final Component[] bannerParts;
 
 	public PlayerPanel(final PartyPlayer selectedPlayer, final PartybaseConfig config,
-						final SpriteManager spriteManager, final ItemManager itemManager)
+		final SpriteManager spriteManager, final ItemManager itemManager)
 	{
 		this.player = selectedPlayer;
 		this.config = config;
@@ -202,29 +203,29 @@ public class PlayerPanel extends JPanel
 	private void addTab(final MaterialTabGroup tabGroup, final int spriteID, final JPanel panel, final String tooltip)
 	{
 		spriteManager.getSpriteAsync(spriteID, 0, img ->
-				SwingUtilities.invokeLater(() ->
-				{
-					final MaterialTab tab = new MaterialTab(createImageIcon(img), tabGroup, panel);
-					tab.setToolTipText(tooltip);
-					tabGroup.addTab(tab);
-					tabGroup.revalidate();
-					tabGroup.repaint();
+			SwingUtilities.invokeLater(() ->
+		{
+			final MaterialTab tab = new MaterialTab(createImageIcon(img), tabGroup, panel);
+			tab.setToolTipText(tooltip);
+			tabGroup.addTab(tab);
+			tabGroup.revalidate();
+			tabGroup.repaint();
 
-					tabMap.put(spriteID, false);
-					tab.setOnSelectEvent(() ->
-					{
-						tabMap.replaceAll((k, v) -> false);
-						tabMap.put(spriteID, true);
-						updatePlayerData(player, false);
-						return true;
-					});
+			tabMap.put(spriteID, false);
+			tab.setOnSelectEvent(() ->
+			{
+				tabMap.replaceAll((k, v) -> false);
+				tabMap.put(spriteID, true);
+				updatePlayerData(player, false);
+				return true;
+			});
 
-					if (spriteID == SpriteID.SideiconsInterface.INVENTORY)
-					{
-						tabGroup.select(tab);
-						tabMap.put(spriteID, true);
-					}
-				}));
+			if (spriteID == SpriteID.SideiconsInterface.INVENTORY)
+			{
+				tabGroup.select(tab);
+				tabMap.put(spriteID, true);
+			}
+		}));
 	}
 
 	private ImageIcon createImageIcon(BufferedImage image)
@@ -346,9 +347,9 @@ public class PlayerPanel extends JPanel
 		if (showInfo)
 		{
 			this.setBorder(new CompoundBorder(
-					new MatteBorder(2, 2, 2, 2, new Color(87, 80, 64)),
-					new EmptyBorder(0, 0, 5, 0)
-			));
+				new MatteBorder(2, 2, 2, 2, new Color(87, 80, 64)),
+				new EmptyBorder(0, 0, 5, 0)
+				));
 		}
 		else
 		{

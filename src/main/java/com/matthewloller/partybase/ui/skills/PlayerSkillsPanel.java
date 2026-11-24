@@ -80,7 +80,7 @@ public class PlayerSkillsPanel extends JPanel
 			MAGIC, FLETCHING, WOODCUTTING,
 			RUNECRAFT, SLAYER, FARMING,
 			CONSTRUCTION, HUNTER, SAILING
-	);
+		);
 
 	private static final ImmutableMap<Skill, Integer> SPRITE_MAP;
 

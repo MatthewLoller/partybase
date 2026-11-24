@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps.model;
 
 import static org.junit.Assert.assertEquals;
@@ -225,7 +249,7 @@ public class HitChanceTest
 		me.weaponName = "Bandos godsword";
 		me.crushBonus = 0;
 		WeaponStyles.Style smash = new WeaponStyles(Collections.singletonList("11804\tBandos godsword\t2h Sword"))
-			.style(11804, "Bandos godsword", 2);
+		.style(11804, "Bandos godsword", 2);
 		assertEquals(WeaponStyles.Type.CRUSH, smash.type);
 		me.specialAttack = true;
 		// a godsword spec rolls twice as accurately and against slash defence, whatever the style
@@ -285,7 +309,7 @@ public class HitChanceTest
 	{
 		me.crushBonus = 132;
 		WeaponStyles.Style pound = new WeaponStyles(Collections.singletonList("24417\tInquisitor's mace\tSpiked"))
-			.style(24417, "Inquisitor's mace", 0);
+		.style(24417, "Inquisitor's mace", 0);
 		me.worn = Arrays.asList("Inquisitor's great helm", "Inquisitor's hauberk", "Inquisitor's plateskirt");
 		assertEquals(129L * 196 * 205 / 200, HitChance.attackRoll(me, pound, demon));
 	}
@@ -308,7 +332,7 @@ public class HitChanceTest
 	{
 		me.weaponName = "Osmumten's fang";
 		WeaponStyles.Style lunge = new WeaponStyles(Collections.singletonList("26219\tOsmumten's fang\tStab Sword"))
-			.style(26219, "Osmumten's fang", 1);
+		.style(26219, "Osmumten's fang", 1);
 		double fang = HitChance.of(me, lunge, vorkath, 214, 150);
 		long roll = HitChance.attackRoll(me, lunge, vorkath);
 		long defence = HitChance.defenceRoll(WeaponStyles.Type.STAB, vorkath, 214, 150);
@@ -444,7 +468,7 @@ public class HitChanceTest
 	{
 		NpcStats.Npc rat = new NpcStats(Collections.singletonList(
 			"7223\tGiant rat (Scurrius)\t10\t1\t0\t0\t0\t0\t0\t0\t0\t0\trat\t\talways-hit-not-clicked\t1"))
-			.get(7223, null);
+		.get(7223, null);
 		WeaponStyles.Style flick = WEAPONS.style(4151, "Abyssal whip", 0);
 		assertEquals(1, HitChance.of(me, flick, rat, 10, 1), D);
 		me.clickedSpell = "Fire Strike";

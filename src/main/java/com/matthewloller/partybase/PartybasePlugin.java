@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2020, TheStonedTurtle <https://github.com/TheStonedTurtle>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase;
 
 import com.google.common.collect.ImmutableSet;
@@ -12,12 +36,15 @@ import com.matthewloller.partybase.dps.DpsModule;
 import com.matthewloller.partybase.ui.PlayerPanel;
 import com.matthewloller.partybase.ui.prayer.PrayerSprites;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -62,15 +89,16 @@ import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.Filepath;
 import net.runelite.client.util.ImageUtil;
 
 @Slf4j
 @PluginDescriptor(
-		name = "Partybase",
-		description = "Party side panel with member info and a party DPS meter",
-		tags = {"party", "group", "dps", "damage", "meter", "boss", "pvm", "raid"},
-		// names the data folder: .runelite/plugin-data/partybase
-		internalName = "partybase"
+	name = "Partybase",
+	description = "Party side panel with member info and a party DPS meter",
+	tags = {"party", "group", "dps", "damage", "meter", "boss", "pvm", "raid"},
+	// names the data folder: .runelite/plugin-data/partybase
+	internalName = "partybase"
 )
 // the DPS hit chance counts the slayer helmet on the task that RuneLite's Slayer plugin knows
 @PluginDependency(SlayerPlugin.class)
@@ -79,12 +107,12 @@ public class PartybasePlugin extends Plugin
 	private static final BufferedImage ICON = ImageUtil.loadImageResource(PartybasePlugin.class, "icon.png");
 	public static final Set<Integer> RUNEPOUCH_ITEM_IDS = ImmutableSet.of(
 			ItemID.BH_RUNE_POUCH, ItemID.BH_RUNE_POUCH_TROUVER, ItemID.DIVINE_RUNE_POUCH, ItemID.DIVINE_RUNE_POUCH_TROUVER
-	);
+		);
 	public static final Set<Integer> DIZANAS_QUIVER_IDS = ImmutableSet.<Integer>builder()
-			.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.DIZANAS_QUIVER_CHARGED)))
-			.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.DIZANAS_QUIVER_INFINITE)))
-			.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.SKILLCAPE_MAX_DIZANAS)))
-			.build();
+		.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.DIZANAS_QUIVER_CHARGED)))
+		.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.DIZANAS_QUIVER_INFINITE)))
+		.addAll(ItemVariationMapping.getVariations(ItemVariationMapping.map(ItemID.SKILLCAPE_MAX_DIZANAS)))
+		.build();
 
 	@Inject
 	private Client client;
@@ -132,6 +160,15 @@ public class PartybasePlugin extends Plugin
 	@Inject
 	private DefenceModule defence;
 
+	/** The started modules, in start order. */
+	private List<PartybaseModule> modules = Collections.emptyList();
+
+	/** The plugin's data folder, .runelite/plugin-data/partybase. */
+	public Filepath getDataDirectory() throws IOException
+	{
+		return getPluginDirectory();
+	}
+
 	@Provides
 	PartybaseConfig provideConfig(ConfigManager configManager)
 	{
@@ -156,29 +193,31 @@ public class PartybasePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		dps.startUp(getPluginDirectory());
-		eventBus.register(dps);
-		defence.startUp(this);
-		eventBus.register(defence);
+		modules = Arrays.asList(dps, defence);
+		for (PartybaseModule module : modules)
+		{
+			module.startUp(this);
+			eventBus.register(module);
+		}
 
 		panel = new PartybasePanel(this);
 		navButton = NavigationButton.builder()
-				.tooltip("Partybase")
-				.icon(ICON)
-				.priority(7)
-				.panel(panel)
-				.build();
+			.tooltip("Partybase")
+			.icon(ICON)
+			.priority(7)
+			.panel(panel)
+			.build();
 
 		wsClient.registerMessage(PartybaseBatchedChange.class);
 		partyDataService.subscribe(this,
-				PartyDataType.CHARACTER_NAME,
-				PartyDataType.ENERGY,
-				PartyDataType.SPEC,
-				PartyDataType.INV,
-				PartyDataType.WORN,
-				PartyDataType.ACTIVE_PRAYERS,
-				PartyDataType.RUNE_POUCH,
-				PartyDataType.QUIVER
+			PartyDataType.CHARACTER_NAME,
+			PartyDataType.ENERGY,
+			PartyDataType.SPEC,
+			PartyDataType.INV,
+			PartyDataType.WORN,
+			PartyDataType.ACTIVE_PRAYERS,
+			PartyDataType.RUNE_POUCH,
+			PartyDataType.QUIVER
 		);
 		partyDataService.subscribe(this, Skill.values());
 
@@ -223,10 +262,12 @@ public class PartybasePlugin extends Plugin
 		lastLogout = null;
 		overlayManager.remove(partyReminderOverlay);
 
-		eventBus.unregister(dps);
-		dps.shutDown();
-		eventBus.unregister(defence);
-		defence.shutDown();
+		for (int i = modules.size() - 1; i >= 0; i--)
+		{
+			eventBus.unregister(modules.get(i));
+			modules.get(i).shutDown();
+		}
+		modules = Collections.emptyList();
 	}
 
 	@Subscribe
@@ -618,9 +659,9 @@ public class PartybasePlugin extends Plugin
 			if (!Character.isLetter(ch) && !Character.isDigit(ch) && ch != '-')
 			{
 				JOptionPane.showMessageDialog(panel.getControlsPanel(),
-						"Party passphrase must be a combination of alphanumeric or hyphen characters.",
-						"Invalid party passphrase",
-						JOptionPane.ERROR_MESSAGE);
+					"Party passphrase must be a combination of alphanumeric or hyphen characters.",
+					"Invalid party passphrase",
+					JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
@@ -697,8 +738,8 @@ public class PartybasePlugin extends Plugin
 	}
 
 	@Schedule(
-			period = 10,
-			unit = ChronoUnit.SECONDS
+		period = 10,
+		unit = ChronoUnit.SECONDS
 	)
 	public void checkIdle()
 	{
@@ -708,7 +749,7 @@ public class PartybasePlugin extends Plugin
 		}
 
 		if (lastLogout != null && lastLogout.isBefore(Instant.now().minus(30, ChronoUnit.MINUTES))
-				&& partyService.isInParty())
+			&& partyService.isInParty())
 		{
 			log.info("Leaving party due to inactivity");
 			partyService.changeParty(null);

@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps.model;
 
 import java.util.ArrayList;
@@ -322,30 +346,31 @@ public class BossRecords
 		{
 			String pb = b == null ? "" : c.newMostDamage ? " NEW PB! (was " + Format.amount(b.mostDamage) + ")"
 				: " (PB " + Format.amount(b.mostDamage) + ")";
-			out.add(new String[]{"Your damage", Format.amount(c.kill.myDamage) + pb});
+			out.add(new String[] {"Your damage", Format.amount(c.kill.myDamage) + pb});
 		}
 		else if (b == null)
 		{
-			out.add(new String[]{"Kill time", Format.preciseDuration(c.kill.timeMs) + " (first kill!)"});
+			out.add(new String[] {"Kill time", Format.preciseDuration(c.kill.timeMs) + " (first kill!)"});
 		}
 		else
 		{
-			out.add(new String[]{"Kill time", Format.preciseDuration(c.kill.timeMs)
-				+ (c.newFastest ? " NEW PB! (was " : " (PB ") + Format.preciseDuration(b.fastestMs) + ")"});
+			out.add(new String[] {"Kill time", Format.preciseDuration(c.kill.timeMs)
+				+ (c.newFastest ? " NEW PB! (was " : " (PB ") + Format.preciseDuration(b.fastestMs) + ")"
+				});
 		}
 		if (c.kill.myDps > 0)
 		{
 			String best = b == null || b.bestDps <= 0 ? ""
 				: c.newBestDps ? " NEW BEST (" + Format.dps(b.bestDps) + ")"
 				: " (best " + Format.dps(b.bestDps) + ")";
-			out.add(new String[]{"Your DPS", Format.dps(c.kill.myDps) + best});
+			out.add(new String[] {"Your DPS", Format.dps(c.kill.myDps) + best});
 		}
 		double vs = c.vsLastDpsPercent();
 		if (!Double.isNaN(vs))
 		{
-			out.add(new String[]{"vs last kill", String.format(java.util.Locale.US, "%+.0f%% DPS", vs)});
+			out.add(new String[] {"vs last kill", String.format(java.util.Locale.US, "%+.0f%% DPS", vs)});
 		}
-		out.add(new String[]{"Kill count", String.valueOf(b == null ? 1 : b.kills + 1)});
+		out.add(new String[] {"Kill count", String.valueOf(b == null ? 1 : b.kills + 1)});
 		return out;
 	}
 

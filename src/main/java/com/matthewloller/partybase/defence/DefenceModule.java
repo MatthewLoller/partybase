@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Maxwell
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
  * All rights reserved.
  *
  * Better Party Defence
@@ -17,6 +18,8 @@ package com.matthewloller.partybase.defence;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.PartybaseConfig.DefenceOverlayPosition;
 import com.matthewloller.partybase.PartybaseConfig.TrackerFont;
+import com.matthewloller.partybase.PartybaseModule;
+import com.matthewloller.partybase.PartybasePlugin;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -75,7 +78,7 @@ import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 // Uses RuneLite's existing party service.
 @Slf4j
 @Singleton
-public class DefenceModule
+public class DefenceModule implements PartybaseModule
 {
 	@Inject
 	private Client client;
@@ -167,10 +170,10 @@ public class DefenceModule
 		return owner;
 	}
 
-	/** @param owner PartybasePlugin, which also registers this module on the event bus */
-	public void startUp(Plugin owner)
+	@Override
+	public void startUp(PartybasePlugin plugin)
 	{
-		this.owner = owner;
+		this.owner = plugin;
 		migrateLegacyHealthBarDisplayMode();
 		display = new DefenceDisplayController(
 			client, clientThread, config, defenceTracker, infoBoxManager, itemManager,
@@ -201,6 +204,7 @@ public class DefenceModule
 		}
 	}
 
+	@Override
 	public void shutDown()
 	{
 		partyEpoch++;

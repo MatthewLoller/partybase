@@ -1,8 +1,29 @@
 /*
- * Party settings come from Party Panel, Copyright (c) 2020, TheStonedTurtle.
- * DPS settings come from GoldenDPS, Copyright (c) 2026, tjeerocka.
- * Defence settings come from Better Party Defence, Copyright (c) 2026, Heisty.
- * All BSD 2-Clause; see LICENSE.
+ * Copyright (c) 2020, TheStonedTurtle <https://github.com/TheStonedTurtle>
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * Copyright (c) 2026, Heisty <https://github.com/Falsary>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.matthewloller.partybase;
 
@@ -46,6 +67,9 @@ public interface PartybaseConfig extends Config
 			return label;
 		}
 	}
+
+	@ConfigSection(name = "Party info", description = "The Party info tab: member banners and party controls", position = 0)
+	String partyInfoSection = "partyInfo";
 
 	@ConfigSection(name = "DPS: party", description = "Sharing DPS with your RuneLite party", position = 10)
 	String partySection = "dpsParty";
@@ -207,7 +231,7 @@ public interface PartybaseConfig extends Config
 		keyName = "compactOverlay",
 		name = "Compact",
 		description = "A narrow meter: short names (\"Franz\" becomes \"Fr\") and only the damage (or the number"
-			+ " you show)",
+		+ " you show)",
 		position = 1,
 		section = overlaySection
 	)
@@ -358,9 +382,10 @@ public interface PartybaseConfig extends Config
 	// ---- Party info (from Party Panel) ----
 
 	@ConfigItem(
-			keyName = "alwaysShowIcon",
-			name = "Always show sidebar",
-			description = "<html>Controls whether the sidebar icon is always shown (checked) or only shown while inside a party (unchecked)</html>"
+		keyName = "alwaysShowIcon",
+		name = "Always show sidebar",
+		description = "<html>Controls whether the sidebar icon is always shown (checked) or only shown while inside a party (unchecked)</html>",
+		section = partyInfoSection
 	)
 	default boolean alwaysShowIcon()
 	{
@@ -368,10 +393,11 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "showPartyControls",
-			name = "Show Party Controls",
-			description = "<html>Controls whether we display the party control buttons like create and leave party</html>",
-			position = 0
+		keyName = "showPartyControls",
+		name = "Show Party Controls",
+		description = "<html>Controls whether we display the party control buttons like create and leave party</html>",
+		position = 0,
+		section = partyInfoSection
 	)
 	default boolean showPartyControls()
 	{
@@ -379,10 +405,11 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "showPartyPassphrase",
-			name = "Show Party Passphrase",
-			description = "<html>Controls whether the party passphrase is displayed within the UI<br/>If disabled and party controls are shown you can still copy</html>",
-			position = 1
+		keyName = "showPartyPassphrase",
+		name = "Show Party Passphrase",
+		description = "<html>Controls whether the party passphrase is displayed within the UI<br/>If disabled and party controls are shown you can still copy</html>",
+		position = 1,
+		section = partyInfoSection
 	)
 	default boolean showPartyPassphrase()
 	{
@@ -390,10 +417,11 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "autoExpandMembers",
-			name = "Expand members by default",
-			description = "<html>Controls whether party member details are automatically expanded (checked) or collapsed into banners (unchecked)</html>",
-			position = 2
+		keyName = "autoExpandMembers",
+		name = "Expand members by default",
+		description = "<html>Controls whether party member details are automatically expanded (checked) or collapsed into banners (unchecked)</html>",
+		position = 2,
+		section = partyInfoSection
 	)
 	default boolean autoExpandMembers()
 	{
@@ -401,10 +429,11 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "displayVirtualLevels",
-			name = "Display Virtual Levels",
-			description = "<html>Controls whether we display a players virtual level as their base level</html>",
-			position = 3
+		keyName = "displayVirtualLevels",
+		name = "Display Virtual Levels",
+		description = "<html>Controls whether we display a players virtual level as their base level</html>",
+		position = 3,
+		section = partyInfoSection
 	)
 	default boolean displayVirtualLevels()
 	{
@@ -412,10 +441,11 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "displayPlayerWorlds",
-			name = "Display Player Worlds",
-			description = "<html>Controls whether we display the world a player is currently on</html>",
-			position = 4
+		keyName = "displayPlayerWorlds",
+		name = "Display Player Worlds",
+		description = "<html>Controls whether we display the world a player is currently on</html>",
+		position = 4,
+		section = partyInfoSection
 	)
 	default boolean displayPlayerWorlds()
 	{
@@ -424,10 +454,11 @@ public interface PartybaseConfig extends Config
 
 
 	@ConfigItem(
-			keyName = "displayPartyReminderOverlay",
-			name = "Display Party Reminder",
-			description = "Displays an overlay when you are not in a party",
-			position = 5
+		keyName = "displayPartyReminderOverlay",
+		name = "Display Party Reminder",
+		description = "Displays an overlay when you are not in a party",
+		position = 5,
+		section = partyInfoSection
 	)
 	default boolean displayPartyReminderOverlay()
 	{
@@ -436,10 +467,10 @@ public interface PartybaseConfig extends Config
 
 
 	@ConfigItem(
-			keyName = "previousPartyId",
-			name = "",
-			description = "",
-			hidden = true
+		keyName = "previousPartyId",
+		name = "",
+		description = "",
+		hidden = true
 	)
 	default String previousPartyId()
 	{
@@ -447,10 +478,10 @@ public interface PartybaseConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "previousPartyId",
-			name = "",
-			description = "",
-			hidden = true
+		keyName = "previousPartyId",
+		name = "",
+		description = "",
+		hidden = true
 	)
 	void setPreviousPartyId(String id);
 
@@ -465,7 +496,7 @@ public interface PartybaseConfig extends Config
 	enum DefenceValueFormat
 	{
 		CURRENT("Current"), CURRENT_OF_BASE("Current / base"), PERCENT("Percent"), CURRENT_AND_PERCENT(
-				"Current (percent)");
+			"Current (percent)");
 
 		private final String label;
 
@@ -511,7 +542,7 @@ public interface PartybaseConfig extends Config
 	enum DefenceOverlayPosition
 	{
 		ABOVE_HP_BAR("Above HP bar", 1.0, 55, 0), RIGHT_OF_HP_BAR("Right of HP bar", 1.0, 55,
-				38), CENTRE_OF_NPC("Centre of NPC", 0.5, 0, 0), AT_NPC_FEET("At NPC feet", 0.0, 0, 0);
+			38), CENTRE_OF_NPC("Centre of NPC", 0.5, 0, 0), AT_NPC_FEET("At NPC feet", 0.0, 0, 0);
 
 		private final String label;
 		private final double heightFactor;
@@ -545,7 +576,7 @@ public interface PartybaseConfig extends Config
 	enum MagicDefenceDisplay
 	{
 		BONUS("Magic defence bonus"), LEVEL("Magic level"), PERCENT("Percent of starting roll"), BOTH(
-				"Bonus and percent");
+			"Bonus and percent");
 
 		private final String label;
 
@@ -559,7 +590,7 @@ public interface PartybaseConfig extends Config
 	enum TrackerFont
 	{
 		RUNESCAPE("RuneScape"), SANS_SERIF("Sans serif"), SERIF("Serif"), MONOSPACED("Monospaced"), CUSTOM(
-				"Custom font"), ADD_CUSTOM("Add custom font...");
+			"Custom font"), ADD_CUSTOM("Add custom font...");
 
 		private final String label;
 

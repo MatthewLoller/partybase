@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, TheStonedTurtle <https://github.com/TheStonedTurtle>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -273,7 +274,7 @@ class PartybasePanel extends PluginPanel
 		final List<PartyPlayer> players = plugin.getPartyMembers().values()
 			.stream()
 			.sorted(Comparator.<PartyPlayer, Boolean>comparing(o -> !plugin.isLocalPlayer(o.getMember().getMemberId()))
-				.thenComparing(o -> Strings.isNullOrEmpty(o.getUsername()) ? o.getMember().getDisplayName() : o.getUsername()))
+			.thenComparing(o -> Strings.isNullOrEmpty(o.getUsername()) ? o.getMember().getDisplayName() : o.getUsername()))
 			.collect(Collectors.toList());
 
 		for (final PartyPlayer player : players)

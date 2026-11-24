@@ -86,7 +86,7 @@ public class Stats
 				Math.min(baseLevels.get(Skill.MAGIC), 99),
 				Math.min(baseLevels.get(Skill.RANGED), 99),
 				Math.min(baseLevels.get(Skill.PRAYER), 99)
-		);
+			);
 
 		return combatLevel;
 	}

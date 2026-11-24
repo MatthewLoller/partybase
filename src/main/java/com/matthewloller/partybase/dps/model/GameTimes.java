@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps.model;
 
 import java.util.regex.Matcher;
@@ -13,14 +37,14 @@ public final class GameTimes
 
 	/** "Theatre of Blood total completion time: 20:00.00", CoX "your raid is complete! ... Duration: 25:13.20". */
 	private static final Pattern RAID = Pattern.compile(
-		"(?i)(?:total completion time|raid is complete!.*?\\bduration):\\s*" + TIME);
+			"(?i)(?:total completion time|raid is complete!.*?\\bduration):\\s*" + TIME);
 
 	/**
 	 * "Fight duration:", "Challenge duration:" (Gauntlet), "...complete! Duration:" (ToB rooms) and
 	 * "Challenge complete: Path of Het. Duration:" (ToA rooms). Not "Wave duration" or "Lap duration".
 	 */
 	private static final Pattern BOSS = Pattern.compile(
-		"(?i)(?:\\b(?:fight|challenge) duration|(?:^|[.!])\\s*duration):\\s*" + TIME);
+			"(?i)(?:\\b(?:fight|challenge) duration|(?:^|[.!])\\s*duration):\\s*" + TIME);
 
 	/** A time from the chat. */
 	public static final class Time

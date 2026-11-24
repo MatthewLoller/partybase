@@ -114,8 +114,8 @@ public class PlayerBanner extends JPanel
 		statsPanel.add(createIconPanel(spriteManager, SpriteID.Staticons.PRAYER, Skill.PRAYER.getName(), String.valueOf(player.getSkillBoostedLevel(Skill.PRAYER))));
 		statsPanel.add(createIconPanel(spriteManager, SpriteID.OVERLAY_MULTIWAY, SPECIAL_ATTACK_NAME, player.getStats() == null ? "0" : String.valueOf(player.getStats().getSpecialPercent())));
 		statsPanel.add(createIconPanel(spriteManager,
-				usingStamIcon ? SpriteID.OrbIcon.RUN_ICON_SLOWED_DEPLETION : SpriteID.OrbIcon.RUN,
-				RUN_ENERGY_NAME, player.getStats() == null ? "0" : String.valueOf(player.getStats().getRunEnergy()))
+			usingStamIcon ? SpriteID.OrbIcon.RUN_ICON_SLOWED_DEPLETION : SpriteID.OrbIcon.RUN,
+			RUN_ENERGY_NAME, player.getStats() == null ? "0" : String.valueOf(player.getStats().getRunEnergy()))
 		);
 
 		updateSpellbookIcon(player.getSpellbook(), spriteManager);
@@ -249,7 +249,7 @@ public class PlayerBanner extends JPanel
 	}
 
 	private JPanel createIconPanel(final SpriteManager spriteManager, final int spriteID, final String name,
-									final String value)
+		final String value)
 	{
 		final JLabel iconLabel = new JLabel();
 		iconLabel.setPreferredSize(STAT_ICON_SIZE);
@@ -275,19 +275,19 @@ public class PlayerBanner extends JPanel
 	{
 		final JLabel label = iconLabels.get(statLabelKey);
 		spriteManager.getSpriteAsync(spriteID, 0, img ->
-				SwingUtilities.invokeLater(() ->
-				{
-					if (spriteID == SpriteID.Staticons.PRAYER)
-					{
-						label.setIcon(new ImageIcon(ImageUtil.resizeImage(img, STAT_ICON_SIZE.width + 2, STAT_ICON_SIZE.height + 2)));
-					}
-					else
-					{
-						label.setIcon(new ImageIcon(ImageUtil.resizeImage(img, STAT_ICON_SIZE.width, STAT_ICON_SIZE.height)));
-					}
-					label.revalidate();
-					label.repaint();
-				}));
+			SwingUtilities.invokeLater(() ->
+		{
+			if (spriteID == SpriteID.Staticons.PRAYER)
+			{
+				label.setIcon(new ImageIcon(ImageUtil.resizeImage(img, STAT_ICON_SIZE.width + 2, STAT_ICON_SIZE.height + 2)));
+			}
+			else
+			{
+				label.setIcon(new ImageIcon(ImageUtil.resizeImage(img, STAT_ICON_SIZE.width, STAT_ICON_SIZE.height)));
+			}
+			label.revalidate();
+			label.repaint();
+		}));
 	}
 
 	private void setBufferedIcon(String statLabelKey, final BufferedImage img)

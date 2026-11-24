@@ -47,8 +47,8 @@ public class PartybaseBatchedChange extends PartyMemberMessage
 	public boolean isValid()
 	{
 		return (m != null && !m.isEmpty())
-				|| ap != null
-				|| up != null;
+			|| ap != null
+			|| up != null;
 	}
 
 	// Unset unneeded variables to minimize payload
@@ -108,8 +108,8 @@ public class PartybaseBatchedChange extends PartyMemberMessage
 	public boolean hasBreakingBannerChange()
 	{
 		return m != null
-				&& m.stream()
-				.anyMatch(e -> e.t.equals(PartyMiscChange.PartyMisc.W));
+			&& m.stream()
+			.anyMatch(e -> e.t.equals(PartyMiscChange.PartyMisc.W));
 	}
 
 	public static <E extends Enum<E>> int pack(Collection<E> items)

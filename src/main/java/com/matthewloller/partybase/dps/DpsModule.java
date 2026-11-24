@@ -1,8 +1,35 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps;
 
 import com.google.gson.Gson;
 import com.google.inject.Injector;
 import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.PartybaseModule;
+import com.matthewloller.partybase.PartybasePlugin;
 import com.matthewloller.partybase.dps.model.DefenceDrains;
 import com.matthewloller.partybase.dps.model.Fight;
 import com.matthewloller.partybase.dps.model.FightReport;
@@ -83,7 +110,7 @@ import net.runelite.client.util.Text;
  */
 @Slf4j
 @Singleton
-public class DpsModule implements FightTracker.Listener
+public class DpsModule implements PartybaseModule, FightTracker.Listener
 {
 	private static final int PANEL_EVERY_TICKS = 2;
 	private static final String PANEL_TOGGLES_KEY = "panelToggles";
@@ -179,12 +206,10 @@ public class DpsModule implements FightTracker.Listener
 	private volatile boolean overallGoingOn;
 	private volatile boolean overallPaused;
 
-	/**
-	 * @param dataDir the plugin's data folder (Plugin.getPluginDirectory)
-	 */
-	public void startUp(Filepath dataDir) throws IOException
+	@Override
+	public void startUp(PartybasePlugin plugin) throws IOException
 	{
-		createParts(dataDir);
+		createParts(plugin.getDataDirectory());
 		tracker.setListener(this);
 
 		overlay = injector.getInstance(DpsOverlay.class);
@@ -230,6 +255,7 @@ public class DpsModule implements FightTracker.Listener
 		views = new MeterViews(config, tracker, storage, new BossHealth(client), barrows, party, fun, defence);
 	}
 
+	@Override
 	public void shutDown()
 	{
 		clientThread.invoke(() ->
@@ -578,14 +604,14 @@ public class DpsModule implements FightTracker.Listener
 		if (current != null)
 		{
 			client.createMenuEntry(-1)
-				.setOption("Unmark target")
-				.setTarget(e.getTarget())
-				.setType(MenuAction.RUNELITE)
-				.onClick(click -> clientThread.invokeLater(() ->
-				{
-					party.unmark(key);
-					updatePanel();
-				}));
+			.setOption("Unmark target")
+			.setTarget(e.getTarget())
+			.setType(MenuAction.RUNELITE)
+			.onClick(click -> clientThread.invokeLater(() ->
+			{
+				party.unmark(key);
+				updatePanel();
+			}));
 		}
 		// the parent entry marks with the next free icon; its submenu picks one
 		TargetIcon next = current != null ? current.icon : marked.nextIcon();
@@ -598,9 +624,9 @@ public class DpsModule implements FightTracker.Listener
 		for (TargetIcon icon : TargetIcon.values())
 		{
 			icons.createMenuEntry(-1)
-				.setOption(ColorUtil.wrapWithColorTag(icon.getLabel(), icon.getColor()))
-				.setType(MenuAction.RUNELITE)
-				.onClick(click -> markNpc(key, npc.getId(), name, icon));
+			.setOption(ColorUtil.wrapWithColorTag(icon.getLabel(), icon.getColor()))
+			.setType(MenuAction.RUNELITE)
+			.onClick(click -> markNpc(key, npc.getId(), name, icon));
 		}
 	}
 

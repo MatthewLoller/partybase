@@ -64,9 +64,9 @@ public class PartyReminderOverlay extends OverlayPanel
 		}
 
 		LineComponent c = LineComponent.builder()
-				.left("NOT IN A PARTY!")
-				.leftColor(Color.RED)
-				.build();
+			.left("NOT IN A PARTY!")
+			.leftColor(Color.RED)
+			.build();
 		this.panelComponent.getChildren().add(c);
 		return super.render(graphics);
 	}

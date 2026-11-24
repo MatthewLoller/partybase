@@ -96,7 +96,7 @@ public class ControlsPanel extends JPanel
 				final int result = JOptionPane.showOptionDialog(startButton,
 					"Are you sure you want to leave the party?",
 					"Leave party?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-					null, new String[]{"Yes", "No"}, "Yes");
+					null, new String[] {"Yes", "No"}, "Yes");
 
 				if (result == JOptionPane.YES_OPTION)
 				{

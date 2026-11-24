@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2026, tjeerocka <https://github.com/tjeerocka>
+ * Copyright (c) 2026, Matthew Loller <matthewloller@gmail.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.matthewloller.partybase.dps;
 
 import com.matthewloller.partybase.PartybaseConfig;
@@ -49,13 +74,13 @@ class MeterViews
 		Map<String, String[]> labels = new HashMap<>();
 		if (showDefence)
 		{
-			defence.all().forEach((key, t) -> labels.put(key, new String[]{levels(t), t.summary()}));
+			defence.all().forEach((key, t) -> labels.put(key, new String[] {levels(t), t.summary()}));
 		}
 		if (hit != null)
 		{
 			String[] lines = labels.get(hit.targetKey);
 			String chance = (hit.spec ? "Spec hit chance " : "Hit chance ") + percent(hit.now);
-			labels.put(hit.targetKey, lines == null ? new String[]{chance} : new String[]{lines[0] + "  " + chance, lines[1]});
+			labels.put(hit.targetKey, lines == null ? new String[] {chance} : new String[] {lines[0] + "  " + chance, lines[1]});
 		}
 		return labels;
 	}
@@ -81,16 +106,17 @@ class MeterViews
 			String now = percent(hit.now);
 			String before = percent(hit.before);
 			String value = now.equals(before) ? now : now + " (was " + before + ")";
-			lines.add(new String[]{(hit.spec ? "Spec hit chance: " : "Hit chance: ") + hit.name, value});
+			lines.add(new String[] {(hit.spec ? "Spec hit chance: " : "Hit chance: ") + hit.name, value});
 		}
 		for (DefenceDrains.Target t : defence.all().values())
 		{
-			lines.add(new String[]{t.name, levels(t)});
+			lines.add(new String[] {t.name, levels(t)});
 			for (DefenceDrains.Drain d : t.getDrains())
 			{
 				String who = Objects.equals(d.player, localName) ? "you" : d.player;
-				lines.add(new String[]{"+ " + DefenceDrains.shortName(d.weapon) + " (" + who + ")",
-					"-" + d.amount + (d.magic ? " magic" : "")});
+				lines.add(new String[] {"+ " + DefenceDrains.shortName(d.weapon) + " (" + who + ")",
+					"-" + d.amount + (d.magic ? " magic" : "")
+					});
 			}
 		}
 		return lines;
@@ -225,7 +251,7 @@ class MeterViews
 				BossRecords.Record pb = storage.record(report.getTitle(), BossRecords.isParty(report));
 				tag = pb != null ? "PB " + Format.preciseDuration(pb.fastestMs) : "";
 			}
-			out.add(new String[]{report.getTitle(), Format.preciseDuration(report.getDurationMs()), tag});
+			out.add(new String[] {report.getTitle(), Format.preciseDuration(report.getDurationMs()), tag});
 		}
 		return out;
 	}

@@ -13,6 +13,23 @@ An all-in-one RuneLite party plugin. The sidebar shows how long your party has b
 
 Partybase uses its own party message types, so it does not exchange data with Party Panel or GoldenDPS users. Everyone in the party needs Partybase installed.
 
+## Code layout
+
+- `com.matthewloller.partybase`: the plugin, its config and the sidebar panel, plus the Party info code (`data`, `ui`) from Party Panel.
+- `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
+- `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
+
+Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts, registers on the event bus, and stops in reverse order. All settings live in `PartybaseConfig`, grouped into Party info, DPS and Defence sections. Party messages are named `Partybase*` so they never mix with the original plugins.
+
+## Code conventions
+
+- Allman braces, tab indents, one extra tab for continuation lines. Checkstyle (`config/checkstyle/checkstyle.xml`) runs on every build.
+- Imports: no unused ones; static imports first, then the rest in alphabetical order.
+- LF line endings (see `.gitattributes`).
+- Every source file starts with the BSD 2-Clause header naming its original author.
+
+Run `tools/format.sh` (needs `astyle`) before committing to apply the formatting and import rules.
+
 ## Development
 
 Requires JDK 11.

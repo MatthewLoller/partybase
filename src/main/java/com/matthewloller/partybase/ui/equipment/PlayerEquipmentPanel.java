@@ -219,29 +219,29 @@ public class PlayerEquipmentPanel extends JPanel
 
 		spriteManager.getSpriteAsync(spriteID, 0, img ->
 			SwingUtilities.invokeLater(() ->
+		{
+			final EquipmentPanelSlot panel = new EquipmentPanelSlot(item, image, background, img);
+			if (border != null)
 			{
-				final EquipmentPanelSlot panel = new EquipmentPanelSlot(item, image, background, img);
-				if (border != null)
-				{
-					panel.setBorder(border);
-				}
+				panel.setBorder(border);
+			}
 
-				if (slot != null)
-				{
-					panelMap.put(slot, panel);
-				}
-				else
-				{
-					quiverSlot = panel;
-					panel.setVisible(quiver.isSlotVisible());
-				}
+			if (slot != null)
+			{
+				panelMap.put(slot, panel);
+			}
+			else
+			{
+				quiverSlot = panel;
+				panel.setVisible(quiver.isSlotVisible());
+			}
 
-				if (image != null)
-				{
-					image.onLoaded(() -> panel.setGameItem(item, image));
-				}
+			if (image != null)
+			{
+				image.onLoaded(() -> panel.setGameItem(item, image));
+			}
 
-				add(panel, c);
-			}));
+			add(panel, c);
+		}));
 	}
 }
