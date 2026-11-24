@@ -1,42 +1,132 @@
 # Partybase
 
-An all-in-one RuneLite party plugin. The sidebar shows how long your party has been active and who leads it, with two tabs:
+An all-in-one RuneLite party plugin. It combines three Plugin Hub plugins into one sidebar and one set of settings:
 
-- **Party info**: your party members' stats, inventory, equipment and prayers (from [Party Panel](https://github.com/TheStonedTurtle/party-panel) by TheStonedTurtle).
-- **DPS**: a live damage meter plus fight details, personal bests and monster stats (from [GoldenDPS](https://github.com/tjeerocka/goldendps) by tjeerocka). The same meter also shows as an overlay on the game screen.
+- [Party Panel](https://github.com/TheStonedTurtle/party-panel) by TheStonedTurtle: party member info.
+- [GoldenDPS](https://github.com/tjeerocka/goldendps) by tjeerocka: damage, DPS and healing meter.
+- [Better Party Defence](https://github.com/Falsary/better-party-defence) by Heisty: boss defence tracking.
+
+On top of those, Partybase adds a party timer, a party leader, and leader-marked targets.
+
+Everyone in the party needs Partybase. It uses its own party message types, so it does not exchange data with people running the original plugins.
+
+## Sidebar
+
+The top of the sidebar shows **Party active 1:02:03** and the current leader. The timer counts from when the longest-standing current member joined the party. Below that are two tabs.
+
+### Party info
+
+Each party member's banner shows HP, prayer, run energy, special attack, world and spellbook. Click a banner to expand it into inventory, equipment, skills and prayers. Your own banner is listed first and stays collapsed.
+
+The party controls are at the top of this tab: start or leave a party, join one by passphrase, rejoin your previous party, and copy the passphrase.
+
+### DPS
+
+- **Meter:** the same bar meter as the game-screen overlay, at sidebar width. It shows the overall meter and the boss meter.
+- **Marked targets:** the list of marked monsters with their icons (see below).
+- **Fight controls:** a fight picker (live fight, session total or a saved fight), Boss only, End fight, New session, Clear, and Report buttons.
+- **Fight details:** kills per hour, boss times in raids, defence drains, per-player details (accuracy, biggest hit, healing by source, overhealing, damage taken, breakdown per weapon, spec and spell) and damage per target.
+- **Monster stats:** every monster, raid and Barrows run you killed, with personal bests and stats over all kills.
+
+## DPS meter
+
+- **Each client counts its own hits.** The game only marks your own hitsplats. Each client counts its own damage and healing and sends them to the party once per game tick. Players without Partybase are estimated from their attack animations and marked with `~`.
+- **Overlay:** on the game screen, right-click the meter to switch between damage, DPS, healing and damage taken. The same menu toggles boss only, switches between fight and session, reports to party chat, and resets the session.
+- **Overall meter and boss meter:** the boss meter shows only damage on the boss, over the boss time. While the boss lives it shows your personal best pace. Turn off **Overall meter** to show only the boss meter, on screen and in the sidebar.
+- **Fight timing:** fights use active time, so the clock pauses after 10 seconds without hits. A fight ends when the boss dies or after 5 minutes without hits. Raids and Barrows runs are timed as a whole, and every boss inside them also gets its own fight.
+- **Personal bests:** fastest time and best DPS per boss, raid and Barrows run, kept separately for solo and party kills.
+- **Hit chance:** your chance to hit the monster you attack is shown above it. It uses your levels, boosts, prayers, gear, attack style and the monster's defence after specs.
+- **Reports:** Report buttons send the top five to party chat. After a boss kill, the leader sends the boss report automatically (setting: Auto boss report).
+- **Fun extras:** a crown over the top damage dealer, and a burger or fries over the top healer.
+- **Party sync:** members only count while you are in the same instance or fighting the same boss (setting: Others only when together).
 
 ## Party leader and marked targets
 
-- The member who joined the party first leads. If the leader leaves, the next earliest member takes over.
-- The leader can right-click another member in Party info and choose **Make party leader**.
-- The leader shift right-clicks a monster and chooses **Mark target**. Everyone's Partybase then tracks it as a boss fight: the boss meter follows it, it gets a gold outline, and when it dies the fight ends and the leader sends the boss report to party chat (setting: Auto boss report). Solo players can mark targets too.
+- **Leader:** the member who joined the party first leads. If the leader leaves, the earliest remaining member takes over.
+- **Handing over:** the leader can right-click another member's banner in Party info and choose **Make party leader**. This only works for members who run Partybase.
+- **Marking:** the leader shift right-clicks a monster and chooses **Mark target**. Clicking it uses the next free icon. Its submenu picks one of eight: Star, Circle, Diamond, Triangle, Moon, Square, Cross or Skull. You can mark several monsters at once. Solo players can mark targets too.
+- **What a mark does:** each marked monster gets an outline in its icon colour and the icon above its head. Every member's Partybase treats it as a boss, so the boss meter follows it. When all marked monsters are dead, the fight ends and the leader sends the boss report.
+- **Changing marks:** shift right-click a marked monster to change its icon or unmark it. The DPS tab has a remove button per mark and a Clear all button.
+- **When marks go away:** a mark is removed when its monster dies or despawns. All marks are cleared when you leave or switch parties. Members who join later receive the current marks from the leader.
 
-Partybase uses its own party message types, so it does not exchange data with Party Panel or GoldenDPS users. Everyone in the party needs Partybase installed.
+## Defence tracker
 
-## Code layout
+Partybase estimates the current Defence of supported bosses and NPCs.
 
-- `com.matthewloller.partybase`: the plugin, its config and the sidebar panel, plus the Party info code (`data`, `ui`) from Party Panel.
-- `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
-- `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
+- **Specs tracked:** Dragon warhammer, Elder maul, Bandos godsword, Arclight, Darklight, Emberlight, Barrelchest anchor, Bone dagger, Dorgeshuun crossbow, Accursed sceptre, Tonalztics of Ralos, Seercull and Eye of Ayak.
+- **Other effects:** Vulnerability (including the Tome of Water bonus), and Shadow Barrage with the Shadow ancient sceptre.
+- **Where it shows:**
+  - a readout on the NPC (you choose position, format, font and colours)
+  - a Defence info box, with spec history on hover
+  - a Magic defence readout and info box
+  - info boxes for weapon specs, Vulnerability, Shadow Barrage and the Red Keris timer in Tombs of Amascut
+- **Sharing:** specs are shared with party members who run Partybase. Specs from members who use RuneLite's built-in Special Attack Counter are read too.
+- **Encounter state:** the current state of each encounter is shared, which helps when someone joins late or dies. Separate raid instances are kept apart, and multi-target encounters keep a value per target (for example Olm's claws).
+- **Supported bosses:** Chambers of Xeric, Theatre of Blood, Tombs of Amascut, The Fractured Archive, and many other bosses.
 
-Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts, registers on the event bus, and stops in reverse order. All settings live in `PartybaseConfig`, grouped into Party info, DPS and Defence sections. Party messages are named `Partybase*` so they never mix with the original plugins.
+## Settings
 
-## Code conventions
+All settings are in the Partybase config panel, in these sections:
 
-- Allman braces, tab indents, one extra tab for continuation lines. Checkstyle (`config/checkstyle/checkstyle.xml`) runs on every build.
-- Imports: no unused ones; static imports first, then the rest in alphabetical order.
-- LF line endings (see `.gitattributes`).
-- Every source file starts with the BSD 2-Clause header naming its original author.
+| Section | What it covers |
+| --- | --- |
+| Party info | Sidebar icon, party controls, passphrase, expanding members, virtual levels, worlds, the not-in-a-party reminder |
+| DPS: party | Sharing, counting others, raid party and own party, auto boss report, leave on logout, chat colour |
+| DPS: overlay | Show overlay, compact mode, max bars, width, hide when empty, your bar colour, overall meter, boss meter, simple defence label, hit chance |
+| DPS: fun | Crown on the top damage dealer, snack on the top healer, Max hit column |
+| Defence: general to Defence: effect info boxes | Defence tracker display, info boxes, text and icons, colours, magic defence, effect info boxes |
 
-Run `tools/format.sh` (needs `astyle`) before committing to apply the formatting and import rules.
+## How party data travels
+
+All party data goes through RuneLite's party server. Clients never connect to each other directly. Each message reaches everyone in the party with the same passphrase.
+
+| Message | What it carries |
+| --- | --- |
+| RuneLite's party data (core) | Name, HP, prayer, energy, spec, skills, inventory, equipment, prayers, rune pouch, quiver |
+| `PartybaseBatchedChange` | Stamina, poison, disease, world, spellbook, available and unlocked prayers |
+| `PartybaseDpsUpdate` | Your hits, healing and damage taken, once per game tick while fighting |
+| `PartybaseDpsPartyMessage` | Join times, leader changes, kicks, and marks |
+| `PartybaseDefence*` | Defence specs, encounter state, Red Keris timer |
+| RuneLite's party chat (core) | Fight and boss reports |
+
+RuneLite parties have no leader role. Each client works out the leader from Partybase's messages, and only accepts marks and kicks from that leader. Anyone with the passphrase can join, so share it only with your party.
+
+## Data
+
+Fight history, personal bests and monster stats are stored per account in `.runelite/plugin-data/partybase/`.
 
 ## Development
 
-Requires JDK 11.
+Requires JDK 11. On this machine that is `C:\Program Files\Eclipse Adoptium\jdk-11.0.19.7-hotspot`.
 
 ```
-gradlew run    # RuneLite in developer mode with Partybase loaded
-gradlew test
+gradlew run     # RuneLite in developer mode with Partybase loaded
+gradlew build   # compile, checkstyle and tests
 ```
 
-Log in through the Jagex account panel in the client sidebar. Fight data is stored in `.runelite/plugin-data/partybase/`.
+- **Logging in:** use the Jagex account button in the client sidebar.
+- **VS Code:** `.vscode/settings.json` points the Java extension at JDK 11, because Gradle 8.10 can't run on the bundled Java 25. Start the client from the Gradle sidebar: partybase > Tasks > other > run.
+- **Git:** use Windows git (or IntelliJ/VS Code) in this folder. WSL git can't set file permissions on the C: drive.
+
+### Code layout
+
+- `com.matthewloller.partybase`: the plugin, its config and the sidebar panel. The `data` and `ui` packages hold the Party info code from Party Panel.
+- `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
+- `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
+
+Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts and registers on the event bus, then stops in reverse order. All settings live in `PartybaseConfig`. Party messages are named `Partybase*`.
+
+### Code conventions
+
+- Allman braces, tab indents, one extra tab for continuation lines. Checkstyle (`config/checkstyle/checkstyle.xml`) runs on every build.
+- No unused imports. Static imports come first, then the rest in alphabetical order.
+- LF line endings (see `.gitattributes`).
+- Every source file starts with the BSD 2-Clause header naming its original author.
+- Run `tools/format.sh` (needs `astyle`) before committing to apply the formatting and import rules.
+- Update this README with every feature change.
+
+## Credits and licences
+
+Partybase is BSD 2-Clause. It includes code from Party Panel (TheStonedTurtle), GoldenDPS (tjeerocka) and Better Party Defence (Heisty), all under BSD 2-Clause. See `LICENSE`.
+
+Better Party Defence includes code derived from OSParty; see `LICENSE-OSPARTY.txt` and `ATTRIBUTION-better-party-defence.md`. GoldenDPS's boss list comes from RuneLite's DPS Counter plugin. Its monster stats (`npc_stats.tsv`) come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0).
