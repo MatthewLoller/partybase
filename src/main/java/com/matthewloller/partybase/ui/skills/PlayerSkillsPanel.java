@@ -24,24 +24,6 @@
  */
 package com.matthewloller.partybase.ui.skills;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import lombok.Getter;
-import net.runelite.api.Skill;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.client.game.SpriteManager;
-import net.runelite.client.ui.DynamicGridLayout;
-import net.runelite.client.ui.PluginPanel;
-import com.matthewloller.partybase.data.PartyPlayer;
-
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static net.runelite.api.Skill.AGILITY;
 import static net.runelite.api.Skill.ATTACK;
 import static net.runelite.api.Skill.CONSTRUCTION;
@@ -66,6 +48,22 @@ import static net.runelite.api.Skill.SMITHING;
 import static net.runelite.api.Skill.STRENGTH;
 import static net.runelite.api.Skill.THIEVING;
 import static net.runelite.api.Skill.WOODCUTTING;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.matthewloller.partybase.data.PartyPlayer;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import lombok.Getter;
+import net.runelite.api.Skill;
+import net.runelite.api.gameval.SpriteID;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.ui.DynamicGridLayout;
+import net.runelite.client.ui.PluginPanel;
 
 @Getter
 public class PlayerSkillsPanel extends JPanel

@@ -24,9 +24,9 @@
  */
 package com.matthewloller.partybase.data.events;
 
+import com.matthewloller.partybase.data.PartyPlayer;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import com.matthewloller.partybase.data.PartyPlayer;
 
 // Used for updating stuff that is just a single integer value and doesn't fit into the other classes
 @Data

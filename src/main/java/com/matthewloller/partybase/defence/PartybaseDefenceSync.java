@@ -1,21 +1,22 @@
 package com.matthewloller.partybase.defence;
 
 import com.google.gson.annotations.SerializedName;
+import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
+import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
+import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.ToString;
-import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
-import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
-import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.party.messages.PartyMemberMessage;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 
 // Full defence snapshot used to recover party state.
 @ToString(doNotUseGetters = true)
-public class PartybaseDefDefenceSync extends PartyMemberMessage {
+public class PartybaseDefenceSync extends PartyMemberMessage
+{
 	public static final int PROTOCOL_VERSION = 2;
 	private static final int LEGACY_PROTOCOL_VERSION = 1;
 	private static final int COORDINATE_MASK = 0x3fff;
@@ -132,25 +133,28 @@ public class PartybaseDefDefenceSync extends PartyMemberMessage {
 	private Long partyId;
 
 	// Gson.
-	public PartybaseDefDefenceSync() {
+	public PartybaseDefenceSync()
+	{
 	}
 
 	// Keep the constructor used by older callers.
-	public PartybaseDefDefenceSync(int world, SyncState state, int scopeType, int scopeId,
-			int bossX, int bossY, int bossPlane, int healthPercent) {
+	public PartybaseDefenceSync(int world, SyncState state, int scopeType, int scopeId,
+		int bossX, int bossY, int bossPlane, int healthPercent)
+	{
 		this(world, state, scopeType, scopeId, bossX, bossY, bossPlane, healthPercent, 0L);
 	}
 
-	public PartybaseDefDefenceSync(
-			int world,
-			SyncState state,
-			int scopeType,
-			int scopeId,
-			int bossX,
-			int bossY,
-			int bossPlane,
-			int healthPercent,
-			long stateVersion) {
+	public PartybaseDefenceSync(
+		int world,
+		SyncState state,
+		int scopeType,
+		int scopeId,
+		int bossX,
+		int bossY,
+		int bossPlane,
+		int healthPercent,
+		long stateVersion)
+	{
 		this.protocolVersion = PROTOCOL_VERSION;
 		this.world = world;
 		this.bossType = state.getBossType().name();
@@ -166,8 +170,8 @@ public class PartybaseDefDefenceSync extends PartyMemberMessage {
 		this.base = state.getBase();
 		this.attackLevel = state.getAttackLevel() == state.getBossType().getBaseAtk() ? null : state.getAttackLevel();
 		this.strengthLevel = state.getStrengthLevel() == state.getBossType().getBaseStr()
-				? null
-				: state.getStrengthLevel();
+			? null
+			: state.getStrengthLevel();
 		this.magicLevel = state.getMagicLevel();
 		this.magicBaseLevel = state.getMagicBaseLevel();
 		this.magicDef = state.getMagicDef() == 0 ? null : state.getMagicDef();
@@ -186,119 +190,145 @@ public class PartybaseDefDefenceSync extends PartyMemberMessage {
 		this.historyPlayers = new ArrayList<>(history.size());
 		this.historyWeapons = new ArrayList<>(history.size());
 		this.historyHits = new ArrayList<>(history.size());
-		for (SpecHistoryEntry entry : history) {
+		for (SpecHistoryEntry entry : history)
+		{
 			historyEventIds.add(entry.getEventId());
 			historyTickAnchors.add(entry.getTickAnchor());
 			historyEncounterTicks.add(entry.getEncounterTick());
 			historyObservedAtMillis.add(entry.getObservedAtMillis() > 0 ? entry.getObservedAtMillis() : null);
 			historyPlayers.add(entry.getPlayerName());
 			historyWeapons.add(entry.getSpell() == null
-					? (entry.getWeapon() == null ? "" : entry.getWeapon().name())
-					: "spell:" + entry.getSpell().name());
+				? (entry.getWeapon() == null ? "" : entry.getWeapon().name())
+				: "spell:" + entry.getSpell().name());
 			historyHits.add(entry.getHit());
 		}
-		if (historyEventIds.stream().anyMatch(Objects::nonNull)) {
+		if (historyEventIds.stream().anyMatch(Objects::nonNull))
+		{
 			this.eventVersion = EncounterTimeline.VERSION;
-		} else {
+		}
+		else
+		{
 			historyEventIds = null;
 			historyTickAnchors = null;
 			historyEncounterTicks = null;
 		}
-		if (historyObservedAtMillis.stream().allMatch(Objects::isNull)) {
+		if (historyObservedAtMillis.stream().allMatch(Objects::isNull))
+		{
 			historyObservedAtMillis = null;
 		}
 	}
 
-	static Integer packBossLocation(int x, int y, int plane) {
+	static Integer packBossLocation(int x, int y, int plane)
+	{
 		if ((x == 0 && y == 0) || (x & ~COORDINATE_MASK) != 0
-				|| (y & ~COORDINATE_MASK) != 0 || plane < 0 || plane > 3) {
+			|| (y & ~COORDINATE_MASK) != 0 || plane < 0 || plane > 3)
+		{
 			return null;
 		}
 		return (plane << 28) | (x << 14) | y;
 	}
 
 	@ToString.Include(name = "location")
-	public WorldPoint getBossLocation() {
-		if (bossLocation != null) {
+	public WorldPoint getBossLocation()
+	{
+		if (bossLocation != null)
+		{
 			return bossLocation > 0 && bossLocation >>> 30 == 0 ? WorldPoint.fromCoord(bossLocation) : null;
 		}
 		Integer legacy = bossX == null || bossY == null || bossPlane == null
-				? null
-				: packBossLocation(bossX, bossY, bossPlane);
+			? null
+			: packBossLocation(bossX, bossY, bossPlane);
 		return legacy == null ? null : WorldPoint.fromCoord(legacy);
 	}
 
-	public boolean isSupportedProtocol() {
+	public boolean isSupportedProtocol()
+	{
 		return protocolVersion == PROTOCOL_VERSION || protocolVersion == LEGACY_PROTOCOL_VERSION;
 	}
 
-	public SyncState toSyncState() {
-		if (!isSupportedProtocol()) {
+	public SyncState toSyncState()
+	{
+		if (!isSupportedProtocol())
+		{
 			return null;
 		}
 		BossDefence boss;
 		BossDefence decodedBoss;
-		try {
+		try
+		{
 			decodedBoss = BossDefence.valueOf(bossType);
 			boss = decodedBoss.trackingType();
-		} catch (RuntimeException ex) {
+		}
+		catch (RuntimeException ex)
+		{
 			return null;
 		}
 
 		// BGS spillover needs NPC attack and strength levels.
 		long bossAttack = attackLevel != null
-				? attackLevel
-				: protocolVersion == LEGACY_PROTOCOL_VERSION ? 0L : boss.getBaseAtk();
+			? attackLevel
+			: protocolVersion == LEGACY_PROTOCOL_VERSION ? 0L : boss.getBaseAtk();
 		long bossStrength = strengthLevel != null
-				? strengthLevel
-				: protocolVersion == LEGACY_PROTOCOL_VERSION ? 0L : boss.getBaseStr();
+			? strengthLevel
+			: protocolVersion == LEGACY_PROTOCOL_VERSION ? 0L : boss.getBaseStr();
 
 		// Reject partial or inconsistent histories.
 		if (Boolean.TRUE.equals(syncUncertain) || historyPlayers == null || historyWeapons == null
-				|| historyHits == null
-				|| historyPlayers.size() != historyWeapons.size() || historyPlayers.size() != historyHits.size()
-				|| historyPlayers.size() > 4096 || (isDrained() && historyPlayers.isEmpty())
-				|| base < 0 || min < 0 || min > base || current < min || current > base
-				|| bossAttack < 0 || bossStrength < 0 || magicLevel < 0 || magicBaseLevel < 0) {
+			|| historyHits == null
+			|| historyPlayers.size() != historyWeapons.size() || historyPlayers.size() != historyHits.size()
+			|| historyPlayers.size() > 4096 || (isDrained() && historyPlayers.isEmpty())
+			|| base < 0 || min < 0 || min > base || current < min || current > base
+			|| bossAttack < 0 || bossStrength < 0 || magicLevel < 0 || magicBaseLevel < 0)
+		{
 			return null;
 		}
 		List<SpecHistoryEntry> history = new ArrayList<>();
 		int size = historyPlayers.size();
 		boolean eventsSupported = getEventVersion() == EncounterTimeline.VERSION
-				&& size <= EncounterTimeline.MAX_EVENTS
-				&& historyEventIds != null && historyEventIds.size() == size
-				&& historyTickAnchors != null && historyTickAnchors.size() == size
-				&& historyEncounterTicks != null && historyEncounterTicks.size() == size;
+			&& size <= EncounterTimeline.MAX_EVENTS
+			&& historyEventIds != null && historyEventIds.size() == size
+			&& historyTickAnchors != null && historyTickAnchors.size() == size
+			&& historyEncounterTicks != null && historyEncounterTicks.size() == size;
 		boolean timestampsSupported = eventsSupported && historyObservedAtMillis != null
-				&& historyObservedAtMillis.size() == size;
-		for (int i = 0; i < size; i++) {
-			try {
+			&& historyObservedAtMillis.size() == size;
+		for (int i = 0; i < size; i++)
+		{
+			try
+			{
 				String weaponName = historyWeapons.get(i);
 				Integer hit = historyHits.get(i);
-				if (weaponName == null || hit == null || hit < 0) {
+				if (weaponName == null || hit == null || hit < 0)
+				{
 					return null;
 				}
 				SpellDrain spell = weaponName.startsWith("spell:") ? SpellDrain.valueOf(weaponName.substring(6)) : null;
 				SpecialWeapon weapon = spell == null ? SpecialWeapon.valueOf(weaponName) : null;
-				if (spell == null ? !SpecialWeaponRules.isSupported(weapon) : hit != 1) {
+				if (spell == null ? !SpecialWeaponRules.isSupported(weapon) : hit != 1)
+				{
 					return null;
 				}
 				String player = historyPlayers.get(i);
-				if (player == null || player.trim().isEmpty()) {
+				if (player == null || player.trim().isEmpty())
+				{
 					player = "Unknown";
 				}
 				String id = eventsSupported ? historyEventIds.get(i) : null;
 				String anchor = eventsSupported ? historyTickAnchors.get(i) : null;
 				Long tick = eventsSupported ? historyEncounterTicks.get(i) : null;
 				if (id != null && !id.isEmpty() && id.length() <= 128 && anchor != null
-						&& !anchor.isEmpty() && anchor.length() <= 128 && tick != null && tick >= 0) {
+					&& !anchor.isEmpty() && anchor.length() <= 128 && tick != null && tick >= 0)
+				{
 					Long observedAt = timestampsSupported ? historyObservedAtMillis.get(i) : null;
 					history.add(new SpecHistoryEntry(player, weapon, spell, hit, id, anchor, tick,
-							observedAt == null ? 0L : Math.max(0L, observedAt)));
-				} else {
+						observedAt == null ? 0L : Math.max(0L, observedAt)));
+				}
+				else
+				{
 					history.add(new SpecHistoryEntry(player, weapon, spell, hit, null, null, -1));
 				}
-			} catch (RuntimeException ignored) {
+			}
+			catch (RuntimeException ignored)
+			{
 				// Unknown rows invalidate the snapshot.
 				return null;
 			}
@@ -306,8 +336,8 @@ public class PartybaseDefDefenceSync extends PartyMemberMessage {
 
 		return new SyncState(
 				decodedBoss == BossDefence.TEKTON_ENRAGED
-						? boss.getNpcName()
-						: bossName == null ? boss.getNpcName() : bossName,
+				? boss.getNpcName()
+				: bossName == null ? boss.getNpcName() : bossName,
 				boss,
 				current,
 				min,
@@ -325,37 +355,48 @@ public class PartybaseDefDefenceSync extends PartyMemberMessage {
 				Collections.unmodifiableList(history));
 	}
 
-	public int getEventVersion() {
+	public int getEventVersion()
+	{
 		return eventVersion == null ? 0 : eventVersion;
 	}
-	public int getProtocolVersion() {
+	public int getProtocolVersion()
+	{
 		return protocolVersion;
 	}
-	public int getWorld() {
+	public int getWorld()
+	{
 		return world;
 	}
-	public String getBossType() {
+	public String getBossType()
+	{
 		return bossType;
 	}
-	public int getScopeType() {
+	public int getScopeType()
+	{
 		return scopeType == null ? SCOPE_WORLD : scopeType;
 	}
-	public int getScopeId() {
+	public int getScopeId()
+	{
 		return scopeId == null ? 0 : scopeId;
 	}
-	public int getHealthPercent() {
+	public int getHealthPercent()
+	{
 		return healthPercent == null ? -1 : healthPercent;
 	}
-	public long getSentAtMillis() {
+	public long getSentAtMillis()
+	{
 		return sentAtMillis;
 	}
-	public long getPartyId() {
+	public long getPartyId()
+	{
 		return partyId == null ? 0L : partyId;
 	}
-	public long getStateVersion() {
+	public long getStateVersion()
+	{
 		return stateVersion == null ? 0L : stateVersion;
 	}
-	public boolean isDrained() {
+	public boolean isDrained()
+	{
 		return Boolean.TRUE.equals(drained);
 	}
 }

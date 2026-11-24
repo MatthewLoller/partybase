@@ -5,7 +5,8 @@ import net.runelite.client.party.messages.PartyMemberMessage;
 
 // Request stored defence history after a boss appears.
 @ToString(doNotUseGetters = true)
-public class PartybaseDefBossPresence extends PartyMemberMessage {
+public class PartybaseDefenceBossPresence extends PartyMemberMessage
+{
 	public static final int PROTOCOL_VERSION = 1;
 
 	private int protocolVersion;
@@ -18,24 +19,26 @@ public class PartybaseDefBossPresence extends PartyMemberMessage {
 	private int bossPlane;
 	private int healthPercent;
 	private long sentAtMillis;
-	private PartybaseDefDefenceSync offeredHistory;
+	private PartybaseDefenceSync offeredHistory;
 	// Sender party session; zero is legacy.
 	@ToString.Exclude
 	private long partyId;
 
 	// Gson.
-	public PartybaseDefBossPresence() {
+	public PartybaseDefenceBossPresence()
+	{
 	}
 
-	public PartybaseDefBossPresence(
-			int world,
-			BossDefence boss,
-			int scopeType,
-			int scopeId,
-			int bossX,
-			int bossY,
-			int bossPlane,
-			int healthPercent) {
+	public PartybaseDefenceBossPresence(
+		int world,
+		BossDefence boss,
+		int scopeType,
+		int scopeId,
+		int bossX,
+		int bossY,
+		int bossPlane,
+		int healthPercent)
+	{
 		this.protocolVersion = PROTOCOL_VERSION;
 		this.world = world;
 		this.bossType = boss == null ? null : boss.name();
@@ -48,55 +51,73 @@ public class PartybaseDefBossPresence extends PartyMemberMessage {
 		this.sentAtMillis = System.currentTimeMillis();
 	}
 
-	public BossDefence toBossType() {
-		if (bossType == null) {
+	public BossDefence toBossType()
+	{
+		if (bossType == null)
+		{
 			return null;
 		}
-		try {
+		try
+		{
 			return BossDefence.valueOf(bossType).trackingType();
-		} catch (RuntimeException ex) {
+		}
+		catch (RuntimeException ex)
+		{
 			return null;
 		}
 	}
 
-	public int getProtocolVersion() {
+	public int getProtocolVersion()
+	{
 		return protocolVersion;
 	}
-	public int getWorld() {
+	public int getWorld()
+	{
 		return world;
 	}
-	public int getScopeType() {
+	public int getScopeType()
+	{
 		return scopeType;
 	}
-	public int getScopeId() {
+	public int getScopeId()
+	{
 		return scopeId;
 	}
-	public int getBossX() {
+	public int getBossX()
+	{
 		return bossX;
 	}
-	public int getBossY() {
+	public int getBossY()
+	{
 		return bossY;
 	}
-	public int getBossPlane() {
+	public int getBossPlane()
+	{
 		return bossPlane;
 	}
-	public int getHealthPercent() {
+	public int getHealthPercent()
+	{
 		return healthPercent;
 	}
-	public long getSentAtMillis() {
+	public long getSentAtMillis()
+	{
 		return sentAtMillis;
 	}
-	public long getPartyId() {
+	public long getPartyId()
+	{
 		return partyId;
 	}
-	public PartybaseDefBossPresence withPartyId(long partyId) {
+	public PartybaseDefenceBossPresence withPartyId(long partyId)
+	{
 		this.partyId = partyId;
 		return this;
 	}
-	PartybaseDefDefenceSync getOfferedHistory() {
+	PartybaseDefenceSync getOfferedHistory()
+	{
 		return offeredHistory;
 	}
-	void offerHistory(PartybaseDefDefenceSync history) {
+	void offerHistory(PartybaseDefenceSync history)
+	{
 		offeredHistory = history;
 	}
 }

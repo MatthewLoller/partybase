@@ -3,7 +3,6 @@ package com.matthewloller.partybase.defence;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import java.util.ArrayList;
 import java.util.List;
 import net.runelite.api.Client;
@@ -11,9 +10,11 @@ import net.runelite.api.WorldView;
 import net.runelite.api.gameval.VarbitID;
 import org.junit.Test;
 
-public class ToaEncounterCoordinatorTest {
+public class ToaEncounterCoordinatorTest
+{
 	@Test
-	public void fullPartyWipeResetsRememberedBossOncePerWipe() {
+	public void fullPartyWipeResetsRememberedBossOncePerWipe()
+	{
 		Client client = mock(Client.class);
 		WorldView world = mock(WorldView.class);
 		DefenceTracker tracker = mock(DefenceTracker.class);
@@ -25,7 +26,7 @@ public class ToaEncounterCoordinatorTest {
 
 		List<BossDefence> resets = new ArrayList<>();
 		ToaEncounterCoordinator coordinator =
-				new ToaEncounterCoordinator(client, tracker, resets::add);
+			new ToaEncounterCoordinator(client, tracker, resets::add);
 		coordinator.onGameTick();
 		coordinator.onGameTick();
 		assertEquals(List.of(BossDefence.BA_BA), resets);

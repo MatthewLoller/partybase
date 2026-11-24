@@ -1,10 +1,9 @@
 package com.matthewloller.partybase.defence;
 
-import com.matthewloller.partybase.PartybaseConfig;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
+import com.matthewloller.partybase.PartybaseConfig;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import net.runelite.api.Client;
@@ -61,12 +60,12 @@ public class PluginLifecycleRegressionTest
 		plugin.startUp(mock(net.runelite.client.plugins.Plugin.class));
 		plugin.shutDown();
 
-		verify(wsClient).unregisterMessage(PartybaseDefDefenceSync.class);
-		verify(wsClient).unregisterMessage(PartybaseDefSpecEvent.class);
-		verify(wsClient).unregisterMessage(PartybaseDefEncounterPresence.class);
-		verify(wsClient).unregisterMessage(PartybaseDefBossPresence.class);
-		verify(wsClient).unregisterMessage(PartybaseDefEncounterReset.class);
-		verify(wsClient).unregisterMessage(PartybaseDefKerisTimer.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceSync.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceSpecEvent.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceEncounterPresence.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceBossPresence.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceEncounterReset.class);
+		verify(wsClient).unregisterMessage(PartybaseDefenceKerisTimer.class);
 	}
 
 	private void set(String name, Object value) throws Exception

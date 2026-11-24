@@ -24,14 +24,13 @@
  */
 package com.matthewloller.partybase.data;
 
+import com.matthewloller.partybase.ui.prayer.PrayerSprites;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.Prayer;
 import net.runelite.client.party.PartyMember;
-import com.matthewloller.partybase.ui.prayer.PrayerSprites;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class Prayers
 {

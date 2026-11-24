@@ -1,9 +1,9 @@
 package com.matthewloller.partybase.defence;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
 import com.matthewloller.partybase.defence.DefenceTracker.EffectState;
 import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import net.runelite.api.Actor;
 import net.runelite.api.ActorSpotAnim;
 import net.runelite.api.Client;
@@ -22,7 +22,8 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 
 // Detects Vulnerability, Shadow Barrage, and Red Keris effects.
-final class BossEffectTracker {
+final class BossEffectTracker
+{
 	static final int KERIS_EFFECT_TICKS = 10;
 	private static final int VULNERABILITY_PROJECTILE = 168;
 	private static final int CHARGED_TOME_OF_WATER = 25574;
@@ -43,75 +44,94 @@ final class BossEffectTracker {
 	private long kerisHitAtMillis;
 	private int kerisArmGeneration;
 
-	BossEffectTracker(Client client, ClientThread clientThread, DefenceTracker tracker) {
+	BossEffectTracker(Client client, ClientThread clientThread, DefenceTracker tracker)
+	{
 		this.client = client;
 		this.clientThread = clientThread;
 		this.tracker = tracker;
 		this.specialEnergy = client.getVarpValue(VarPlayerID.SA_ENERGY);
 	}
 
-	void onLocalAnimation(Actor actor) {
+	void onLocalAnimation(Actor actor)
+	{
 		Player player = client.getLocalPlayer();
 		if (player == null || actor != player || player.getAnimation() != ANCIENT_BARRAGE_ANIMATION
-				|| !hasShadowSceptre()) {
+			|| !hasShadowSceptre())
+		{
 			return;
 		}
 
 		Actor target = player.getInteracting();
-		if (target instanceof NPC && BossDefence.matchingNpc((NPC) target) != null) {
+		if (target instanceof NPC && BossDefence.matchingNpc((NPC) target) != null)
+		{
 			shadowCasterTarget = (NPC) target;
 			shadowCastTick = client.getTickCount();
 		}
 	}
 
-	void onProjectileMoved(Projectile projectile) {
+	void onProjectileMoved(Projectile projectile)
+	{
 		Player player = client.getLocalPlayer();
 		if (player == null || projectile.getId() != VULNERABILITY_PROJECTILE
-				|| projectile.getSourceActor() != player || !(projectile.getTargetActor() instanceof NPC)) {
+			|| projectile.getSourceActor() != player || !(projectile.getTargetActor() instanceof NPC))
+		{
 			return;
 		}
 		NPC npc = (NPC) projectile.getTargetActor();
-		if (BossDefence.matchingNpc(npc) == null) {
+		if (BossDefence.matchingNpc(npc) == null)
+		{
 			return;
 		}
 		Observation state = observations.computeIfAbsent(npc, key -> new Observation());
-		if (state.vulnerabilityProjectile != projectile) {
+		if (state.vulnerabilityProjectile != projectile)
+		{
 			state.vulnerabilityProjectile = projectile;
 			state.vulnerabilitySpell = equippedItem(EquipmentInventorySlot.SHIELD) == CHARGED_TOME_OF_WATER
-					? SpellDrain.VULNERABILITY_TOME
-					: SpellDrain.VULNERABILITY;
+				? SpellDrain.VULNERABILITY_TOME
+				: SpellDrain.VULNERABILITY;
 		}
 	}
 
-	void onGraphicChanged(Actor actor) {
-		if (!(actor instanceof NPC)) {
+	void onGraphicChanged(Actor actor)
+	{
+		if (!(actor instanceof NPC))
+		{
 			return;
 		}
 		NPC npc = (NPC) actor;
-		if (BossDefence.matchingNpc(npc) == null) {
+		if (BossDefence.matchingNpc(npc) == null)
+		{
 			return;
 		}
 
 		int tick = client.getTickCount();
-		for (ActorSpotAnim spot : npc.getSpotAnims()) {
-			if (spot.getId() == SpotanimID.VULNERABILITY_IMPACT) {
+		for (ActorSpotAnim spot : npc.getSpotAnims())
+		{
+			if (spot.getId() == SpotanimID.VULNERABILITY_IMPACT)
+			{
 				EffectState effects = tracker.effectState(npc, true);
-				if (effects != null) {
+				if (effects != null)
+				{
 					effects.vulnerabilityLanded = true;
 					Observation state = observations.get(npc);
-					if (state != null && state.vulnerabilityGraphicCycle != spot.getStartCycle()) {
+					if (state != null && state.vulnerabilityGraphicCycle != spot.getStartCycle())
+					{
 						state.vulnerabilityGraphicCycle = spot.getStartCycle();
 						if (state.vulnerabilitySpell != null && Math.abs(
-								state.vulnerabilityProjectile.getEndCycle()
-										- spot.getStartCycle()) <= CLIENT_CYCLES_PER_TICK) {
+							state.vulnerabilityProjectile.getEndCycle()
+							- spot.getStartCycle()) <= CLIENT_CYCLES_PER_TICK)
+						{
 							tracker.queueSpell(state.vulnerabilitySpell, npc, tick);
 							state.vulnerabilitySpell = null;
 						}
 					}
 				}
-			} else if (spot.getId() == SpotanimID.SHADOW_BARRAGE_IMPACT) {
+			}
+			else if (spot.getId() == SpotanimID.SHADOW_BARRAGE_IMPACT)
+			{
 				Observation state = observations.computeIfAbsent(npc, key -> new Observation());
-				if (spot.getStartCycle() != state.shadowGraphicCycle) {
+				if (spot.getStartCycle() != state.shadowGraphicCycle)
+				{
 					state.shadowGraphicCycle = spot.getStartCycle();
 					state.shadowGraphicTick = tick;
 					confirmShadow(state, npc);
@@ -120,22 +140,27 @@ final class BossEffectTracker {
 		}
 	}
 
-	void onSpecialEnergy(int energy) {
+	void onSpecialEnergy(int energy)
+	{
 		int spent = specialEnergy - energy;
 		specialEnergy = energy;
-		if ((spent != 750 && spent != 375) || weaponId() != ItemID.KERIS_PARTISAN_CORRUPTION) {
+		if ((spent != 750 && spent != 375) || weaponId() != ItemID.KERIS_PARTISAN_CORRUPTION)
+		{
 			return;
 		}
 
 		int hitTick = client.getTickCount() + 1;
 		int generation = ++kerisArmGeneration;
-		clientThread.invokeLater(() -> {
-			if (generation != kerisArmGeneration) {
+		clientThread.invokeLater(() ->
+		{
+			if (generation != kerisArmGeneration)
+			{
 				return;
 			}
 			Player local = client.getLocalPlayer();
 			Actor target = local == null ? null : local.getInteracting();
-			if (target instanceof NPC && BossDefence.matchingNpc((NPC) target) != null) {
+			if (target instanceof NPC && BossDefence.matchingNpc((NPC) target) != null)
+			{
 				kerisTarget = (NPC) target;
 				kerisHitTick = hitTick;
 				kerisHitAmount = 0;
@@ -143,77 +168,94 @@ final class BossEffectTracker {
 		});
 	}
 
-	void onHitsplatApplied(HitsplatApplied event) {
-		if (!(event.getActor() instanceof NPC) || !event.getHitsplat().isMine()) {
+	void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (!(event.getActor() instanceof NPC) || !event.getHitsplat().isMine())
+		{
 			return;
 		}
 		NPC npc = (NPC) event.getActor();
 		int tick = client.getTickCount();
 		int damage = event.getHitsplat().getAmount();
-		if (npc == kerisTarget && tick == kerisHitTick) {
+		if (npc == kerisTarget && tick == kerisHitTick)
+		{
 			// Instant weapon hits follow other owned hits.
 			kerisHitAmount = damage;
 			kerisHitAtMillis = System.currentTimeMillis();
 		}
 		if (npc == shadowCasterTarget && tick - shadowCastTick >= 0
-				&& tick - shadowCastTick <= 1 && damage > 0) {
+			&& tick - shadowCastTick <= 1 && damage > 0)
+		{
 			Observation state = observations.computeIfAbsent(npc, key -> new Observation());
 			state.shadowHitTick = tick;
 			confirmShadow(state, npc);
 		}
 	}
 
-	private void confirmShadow(Observation state, NPC npc) {
+	private void confirmShadow(Observation state, NPC npc)
+	{
 		if (npc == shadowCasterTarget && state.shadowGraphicTick != NO_TICK
-				&& state.shadowHitTick == state.shadowGraphicTick
-				&& state.shadowHitTick - shadowCastTick >= 0 && state.shadowHitTick - shadowCastTick <= 1) {
+			&& state.shadowHitTick == state.shadowGraphicTick
+			&& state.shadowHitTick - shadowCastTick >= 0 && state.shadowHitTick - shadowCastTick <= 1)
+		{
 			tracker.queueSpell(SpellDrain.SHADOW_BARRAGE, npc, state.shadowHitTick);
 			shadowCasterTarget = null;
 		}
 	}
 
-	void settleKeris(DefenceModule plugin) {
+	void settleKeris(DefenceModule plugin)
+	{
 		int tick = client.getTickCount();
-		if (kerisTarget == null || tick <= kerisHitTick) {
+		if (kerisTarget == null || tick <= kerisHitTick)
+		{
 			return;
 		}
 
 		NPC target = kerisTarget;
 		kerisTarget = null;
 		int expiry = kerisHitTick + KERIS_EFFECT_TICKS;
-		if (kerisHitAmount > 0 && tick < expiry && isCurrentActor(target)) {
+		if (kerisHitAmount > 0 && tick < expiry && isCurrentActor(target))
+		{
 			applyKerisTimer(target, expiry, kerisHitAtMillis);
 			plugin.broadcastKeris(target, kerisHitTick, kerisHitAtMillis);
 		}
 	}
 
-	void applyKerisTimer(NPC target, int expiry, long hitAtMillis) {
+	void applyKerisTimer(NPC target, int expiry, long hitAtMillis)
+	{
 		EffectState effects = tracker.effectState(target, true);
-		if (effects != null && expiry > effects.kerisExpiry && hitAtMillis != effects.kerisHitAtMillis) {
+		if (effects != null && expiry > effects.kerisExpiry && hitAtMillis != effects.kerisHitAtMillis)
+		{
 			effects.kerisExpiry = expiry;
 			effects.kerisHitAtMillis = hitAtMillis;
 		}
 	}
 
-	void updateObservations() {
+	void updateObservations()
+	{
 		int tick = client.getTickCount();
 		observations.keySet().removeIf(npc -> !isCurrentActor(npc));
-		if (shadowCasterTarget != null && tick - shadowCastTick > 1) {
+		if (shadowCasterTarget != null && tick - shadowCastTick > 1)
+		{
 			shadowCasterTarget = null;
 		}
 	}
 
-	void clearBoss(BossDefence boss) {
+	void clearBoss(BossDefence boss)
+	{
 		observations.keySet().removeIf(npc -> BossDefence.matchingNpc(npc) == boss);
-		if (kerisTarget != null && BossDefence.matchingNpc(kerisTarget) == boss) {
+		if (kerisTarget != null && BossDefence.matchingNpc(kerisTarget) == boss)
+		{
 			kerisTarget = null;
 		}
-		if (shadowCasterTarget != null && BossDefence.matchingNpc(shadowCasterTarget) == boss) {
+		if (shadowCasterTarget != null && BossDefence.matchingNpc(shadowCasterTarget) == boss)
+		{
 			shadowCasterTarget = null;
 		}
 	}
 
-	void reset() {
+	void reset()
+	{
 		observations.clear();
 		kerisTarget = null;
 		kerisArmGeneration++;
@@ -221,31 +263,37 @@ final class BossEffectTracker {
 		specialEnergy = client.getVarpValue(VarPlayerID.SA_ENERGY);
 	}
 
-	private boolean hasShadowSceptre() {
+	private boolean hasShadowSceptre()
+	{
 		int item = weaponId();
 		return item == ItemID.ANCIENT_SCEPTRE_SHADOW || item == ItemID.ANCIENT_SCEPTRE_SHADOW_TROUVER;
 	}
 
-	private int weaponId() {
+	private int weaponId()
+	{
 		return equippedItem(EquipmentInventorySlot.WEAPON);
 	}
 
-	private int equippedItem(EquipmentInventorySlot slot) {
+	private int equippedItem(EquipmentInventorySlot slot)
+	{
 		ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
 		Item item = equipment == null ? null : equipment.getItem(slot.getSlotIdx());
 		return item == null ? -1 : item.getId();
 	}
 
-	private NPC npcAtIndex(int index) {
+	private NPC npcAtIndex(int index)
+	{
 		WorldView world = client.getTopLevelWorldView();
 		return world == null || world.npcs() == null ? null : world.npcs().byIndex(index);
 	}
 
-	private boolean isCurrentActor(NPC npc) {
+	private boolean isCurrentActor(NPC npc)
+	{
 		return BossDefence.isLiveNpc(npc) && npcAtIndex(npc.getIndex()) == npc;
 	}
 
-	private static final class Observation {
+	private static final class Observation
+	{
 		private int shadowGraphicCycle = NO_TICK;
 		private int shadowGraphicTick = NO_TICK;
 		private int shadowHitTick = NO_TICK;

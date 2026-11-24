@@ -1,10 +1,12 @@
 package com.matthewloller.partybase.defence;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
-public class AuditEpochIsolationRegressionTest {
-	private RaidTimerClock isolated() {
+public class AuditEpochIsolationRegressionTest
+{
+	private RaidTimerClock isolated()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		assertTrue(clock.sample(RaidTimerClock.SOURCE_TOA, "c77", 500, false, 1000));
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_TOA, "c77", 10, false, 1004));
@@ -14,7 +16,8 @@ public class AuditEpochIsolationRegressionTest {
 	}
 
 	@Test
-	public void ordinaryResampleMustNotRejoinPreCorrectionDomain() {
+	public void ordinaryResampleMustNotRejoinPreCorrectionDomain()
+	{
 		RaidTimerClock clock = isolated();
 		String isolatedDomain = clock.domain();
 		assertTrue(isolatedDomain.endsWith(":g1"));
@@ -23,14 +26,16 @@ public class AuditEpochIsolationRegressionTest {
 	}
 
 	@Test
-	public void isolatedEpochMustRetainAdvertisedUncertainty() {
+	public void isolatedEpochMustRetainAdvertisedUncertainty()
+	{
 		RaidTimerClock clock = isolated();
 		assertEquals("Appending generation must not turn an uncertain timer into an exact clock",
-				RaidTimerClock.TIMER_UNCERTAINTY_TICKS, EncounterTimeline.tickUncertainty(clock.domain()));
+			RaidTimerClock.TIMER_UNCERTAINTY_TICKS, EncounterTimeline.tickUncertainty(clock.domain()));
 	}
 
 	@Test
-	public void separateAmbiguousResetsMustNotReuseTheSameEpoch() {
+	public void separateAmbiguousResetsMustNotReuseTheSameEpoch()
+	{
 		RaidTimerClock clock = isolated();
 		String firstEpoch = clock.domain();
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_TOA, "c77", 3, false, 1010));

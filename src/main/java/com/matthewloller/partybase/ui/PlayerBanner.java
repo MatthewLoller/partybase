@@ -25,24 +25,7 @@
 package com.matthewloller.partybase.ui;
 
 import com.google.common.base.Strings;
-import lombok.Getter;
-import lombok.Setter;
-import net.runelite.api.Constants;
-import net.runelite.api.Skill;
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.client.game.SpriteManager;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.util.ImageUtil;
 import com.matthewloller.partybase.data.PartyPlayer;
-
-import javax.swing.Box;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -52,6 +35,22 @@ import java.awt.Insets;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
+import lombok.Getter;
+import lombok.Setter;
+import net.runelite.api.Constants;
+import net.runelite.api.Skill;
+import net.runelite.api.gameval.SpriteID;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.ImageUtil;
 
 public class PlayerBanner extends JPanel
 {

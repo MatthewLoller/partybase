@@ -24,6 +24,8 @@
  */
 package com.matthewloller.partybase.data;
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.Client;
@@ -31,9 +33,6 @@ import net.runelite.api.Experience;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.client.party.PartyMember;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Getter
 @Setter

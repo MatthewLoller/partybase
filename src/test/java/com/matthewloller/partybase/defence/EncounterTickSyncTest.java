@@ -1,26 +1,28 @@
 package com.matthewloller.partybase.defence;
 
-import com.matthewloller.partybase.PartybaseConfig;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import java.lang.reflect.Field;
-import java.util.*;
+import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import java.lang.reflect.Field;
+import java.util.*;
 import net.runelite.api.*;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Before;
 import org.junit.Test;
 
-public class EncounterTickSyncTest {
+public class EncounterTickSyncTest
+{
 	private Client client;
 	private NPC npc;
 	private DefenceTracker tracker;
 
 	@Before
 	@SuppressWarnings("unchecked")
-	public void setup() {
+	public void setup()
+	{
 		client = mock(Client.class);
 		WorldView world = mock(WorldView.class);
 		IndexedObjectSet<? extends NPC> npcs = mock(IndexedObjectSet.class);
@@ -37,22 +39,25 @@ public class EncounterTickSyncTest {
 		tracker = new DefenceTracker(client, mock(PartybaseConfig.class));
 	}
 
-	private void local(int tick, SpecialWeapon weapon, int hit) {
+	private void local(int tick, SpecialWeapon weapon, int hit)
+	{
 		when(client.getTickCount()).thenReturn(tick);
 		tracker.queueLocal(weapon, 1, hit, 301, "Alice");
 		tracker.onGameTick();
 	}
 
-	private SyncState state(List<SpecHistoryEntry> events) {
+	private SyncState state(List<SpecHistoryEntry> events)
+	{
 		SyncState s = tracker.syncState();
 		return new SyncState(s.getBossName(), s.getBossType(), s.getCurrent(), s.getMin(), s.getBase(),
-				s.getAttackLevel(), s.getStrengthLevel(), s.getMagicLevel(), s.getMagicBaseLevel(),
-				s.getMagicDef(), s.getMagicBaseDef(), s.isMagicUsesDefence(), s.isDemon(),
-				s.isAccursedApplied(), s.isDrained(), events);
+			s.getAttackLevel(), s.getStrengthLevel(), s.getMagicLevel(), s.getMagicBaseLevel(),
+			s.getMagicDef(), s.getMagicBaseDef(), s.isMagicUsesDefence(), s.isDemon(),
+			s.isAccursedApplied(), s.isDrained(), events);
 	}
 
 	@Test
-	public void shadowBarrageDrainsOnlyBeforeDefenceIsReduced() {
+	public void shadowBarrageDrainsOnlyBeforeDefenceIsReduced()
+	{
 		when(client.getTickCount()).thenReturn(100);
 		tracker.queueSpell(SpellDrain.SHADOW_BARRAGE, npc, 100);
 		tracker.onGameTick();
@@ -70,15 +75,16 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void tomeVulnerabilitySurvivesPartySnapshotAndEncounterReset() {
+	public void tomeVulnerabilitySurvivesPartySnapshotAndEncounterReset()
+	{
 		when(client.getTickCount()).thenReturn(100);
 		tracker.queueSpell(SpellDrain.VULNERABILITY_TOME, npc, 100);
 		tracker.onGameTick();
 		assertEquals(264, tracker.state().getCurrent());
 
 		SyncState sent = tracker.syncState();
-		SyncState received = new PartybaseDefDefenceSync(301, sent, PartybaseDefDefenceSync.SCOPE_WORLD,
-				0, 0, 0, 0, 100).toSyncState();
+		SyncState received = new PartybaseDefenceSync(301, sent, PartybaseDefenceSync.SCOPE_WORLD,
+			0, 0, 0, 0, 100).toSyncState();
 		assertEquals(sent, received);
 
 		tracker.reset("test reset");
@@ -89,7 +95,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void encounterStartsAtObservedSpecNotLoginOrProcessingTick() {
+	public void encounterStartsAtObservedSpecNotLoginOrProcessingTick()
+	{
 		when(client.getTickCount()).thenReturn(5000);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
 		when(client.getTickCount()).thenReturn(5003);
@@ -103,7 +110,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void ambiguousSameTickUsesSmallestDrainInEitherArrivalOrder() {
+	public void ambiguousSameTickUsesSmallestDrainInEitherArrivalOrder()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		local(100, SpecialWeapon.BANDOS_GODSWORD, 20);
 		// Corp starts at 310. BGS first: (310 - 40) - floor(270 * .3) = 189.
@@ -115,18 +123,20 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void differentTicksPreserveActualOrder() {
+	public void differentTicksPreserveActualOrder()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		local(101, SpecialWeapon.BANDOS_GODSWORD, 20);
 		assertEquals(177, tracker.state().getCurrent());
 	}
 
 	@Test
-	public void recoveryIsIdempotentAndPreservesDistinctIdenticalSpecs() {
+	public void recoveryIsIdempotentAndPreservesDistinctIdenticalSpecs()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		SpecHistoryEntry next = new SpecHistoryEntry("Alice", SpecialWeapon.DRAGON_WARHAMMER, 1,
-				"next", root.getEventId(), 4);
+			"next", root.getEventId(), 4);
 		SyncState incoming = state(Arrays.asList(root, next));
 		assertTrue(tracker.mergeEventSyncState(incoming, npc));
 		assertEquals(152, tracker.state().getCurrent());
@@ -135,11 +145,12 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void receiptDoesNotAnchorAnUnrelatedClientClock() {
+	public void receiptDoesNotAnchorAnUnrelatedClientClock()
+	{
 		local(10000, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		SpecHistoryEntry peer = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"peer", "peer", 0);
+			"peer", "peer", 0);
 		assertTrue(tracker.mergeEventSyncState(state(Arrays.asList(root, peer)), npc));
 		assertEquals(189, tracker.state().getCurrent());
 		assertFalse(EncounterTimeline.before(root, peer));
@@ -147,24 +158,26 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void standardEchoCanAcquireUniqueIdentityWithoutDoubleDrain() {
+	public void standardEchoCanAcquireUniqueIdentityWithoutDoubleDrain()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		tracker.queue(SpecialWeapon.BANDOS_GODSWORD, 1, 20, 301, "Bob");
 		tracker.onGameTick();
 		SpecHistoryEntry peer = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"peer", "peer", 0);
+			"peer", "peer", 0);
 		assertTrue(tracker.mergeEventSyncState(state(Arrays.asList(root, peer)), npc));
 		assertEquals(2, tracker.specHistory().size());
 		assertEquals(189, tracker.state().getCurrent());
 	}
 
 	@Test
-	public void malformedConflictingOrUnanchoredEventsAreNotReplayed() {
+	public void malformedConflictingOrUnanchoredEventsAreNotReplayed()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		SpecHistoryEntry bad = new SpecHistoryEntry("Alice", root.getWeapon(), 2,
-				root.getEventId(), root.getTickAnchor(), 0);
+			root.getEventId(), root.getTickAnchor(), 0);
 		assertNull(EncounterTimeline.union(Arrays.asList(root), Arrays.asList(bad)));
 		SpecHistoryEntry orphan = new SpecHistoryEntry("Bob", root.getWeapon(), 1, "b", null, 5);
 		assertFalse(EncounterTimeline.complete(Arrays.asList(root, orphan)));
@@ -172,12 +185,13 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void versionedWireRoundTripAndFutureExtensionFallback() throws Exception {
+	public void versionedWireRoundTripAndFutureExtensionFallback() throws Exception
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
-		PartybaseDefDefenceSync wire = new PartybaseDefDefenceSync(301, tracker.syncState(), 0, 0, 1, 1, 0, 100, 9);
-		assertEquals(PartybaseDefDefenceSync.PROTOCOL_VERSION, wire.getProtocolVersion());
+		PartybaseDefenceSync wire = new PartybaseDefenceSync(301, tracker.syncState(), 0, 0, 1, 1, 0, 100, 9);
+		assertEquals(PartybaseDefenceSync.PROTOCOL_VERSION, wire.getProtocolVersion());
 		assertEquals(tracker.specHistory(), wire.toSyncState().getHistory());
-		Field version = PartybaseDefDefenceSync.class.getDeclaredField("eventVersion");
+		Field version = PartybaseDefenceSync.class.getDeclaredField("eventVersion");
 		version.setAccessible(true);
 		version.set(wire, 999);
 		assertNull(wire.toSyncState().getHistory().get(0).getEventId());
@@ -185,7 +199,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void lateJoinKeepsOriginTicksAndSeparateAnchor() {
+	public void lateJoinKeepsOriginTicksAndSeparateAnchor()
+	{
 		// Explicit stamps: this test is about anchor preservation, so the ordering input must
 		// not depend on whether two System.currentTimeMillis() calls land in the same ms.
 		when(client.getTickCount()).thenReturn(100);
@@ -202,13 +217,15 @@ public class EncounterTickSyncTest {
 		// The late joiner's spec is now ordered after the adopted history by its own UTC stamp,
 		// so both drains land: 189 after the adopted DWH, then the BGS drain on top.
 		assertEquals(177, tracker.state().getCurrent());
-		for (SpecHistoryEntry e : tracker.specHistory()) {
+		for (SpecHistoryEntry e : tracker.specHistory())
+		{
 			assertEquals(0, e.getEncounterTick());
 		}
 	}
 
 	@Test
-	public void equalStampsAcrossIndependentAnchorsStayUnordered() {
+	public void equalStampsAcrossIndependentAnchorsStayUnordered()
+	{
 		when(client.getTickCount()).thenReturn(100);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice", null, 1_000_000L);
 		tracker.onGameTick();
@@ -224,7 +241,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void resetCannotReusePreviousOrigin() {
+	public void resetCannotReusePreviousOrigin()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		String old = tracker.specHistory().get(0).getTickAnchor();
 		tracker.reset("test reset");
@@ -234,17 +252,22 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void replayBudgetExhaustionReturnsSafeBaseline() {
+	public void replayBudgetExhaustionReturnsSafeBaseline()
+	{
 		List<SpecHistoryEntry> events = new ArrayList<>();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10; i++)
+		{
 			events.add(new SpecHistoryEntry("P" + i, SpecialWeapon.BANDOS_GODSWORD, 1,
-					"e" + i, "e" + i, 0));
+				"e" + i, "e" + i, 0));
 		}
-		Integer result = EncounterTimeline.replay(events, 100, new EncounterTimeline.Replay<Integer>() {
-			public Integer apply(Integer value, SpecHistoryEntry e) {
+		Integer result = EncounterTimeline.replay(events, 100, new EncounterTimeline.Replay<Integer>()
+		{
+			public Integer apply(Integer value, SpecHistoryEntry e)
+			{
 				return value - 1;
 			}
-			public Integer conservative(Integer a, Integer b) {
+			public Integer conservative(Integer a, Integer b)
+			{
 				return Math.max(a, b);
 			}
 		});
@@ -252,7 +275,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void repeatedLegacyPayloadCannotBeAssignedArbitraryIds() {
+	public void repeatedLegacyPayloadCannotBeAssignedArbitraryIds()
+	{
 		SpecHistoryEntry legacy = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20);
 		SpecHistoryEntry a = new SpecHistoryEntry("Bob", legacy.getWeapon(), 20, "a", "a", 0);
 		SpecHistoryEntry b = new SpecHistoryEntry("Bob", legacy.getWeapon(), 20, "b", "a", 5);
@@ -260,7 +284,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void phaseResetStartsNewStatEpoch() {
+	public void phaseResetStartsNewStatEpoch()
+	{
 		when(npc.getName()).thenReturn("Sotetseg");
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.TOB_CLIENT_WAVEPROGRESS_TYPE)).thenReturn(1);
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -274,7 +299,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void lowerSnapshotVersionStillRecoversUniqueEvent() throws Exception {
+	public void lowerSnapshotVersionStillRecoversUniqueEvent() throws Exception
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		DefenceModule plugin = new DefenceModule();
@@ -285,12 +311,12 @@ public class EncounterTickSyncTest {
 		clientField.setAccessible(true);
 		clientField.set(plugin, client);
 		java.lang.reflect.Method accept = DefenceModule.class.getDeclaredMethod(
-				"incomingVersionIsAcceptable", PartybaseDefDefenceSync.class, SyncState.class, NPC.class);
+				"incomingVersionIsAcceptable", PartybaseDefenceSync.class, SyncState.class, NPC.class);
 		accept.setAccessible(true);
 		SpecHistoryEntry later = new SpecHistoryEntry("Alice", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"later", root.getEventId(), 5);
+			"later", root.getEventId(), 5);
 		SyncState incoming = state(Arrays.asList(root, later));
-		PartybaseDefDefenceSync wire = new PartybaseDefDefenceSync(301, incoming, 0, 0, 1, 1, 0, 100, 1);
+		PartybaseDefenceSync wire = new PartybaseDefenceSync(301, incoming, 0, 0, 1, 1, 0, 100, 1);
 		// Establish a strictly greater local logical version.
 		java.lang.reflect.Method observe = DefenceModule.class.getDeclaredMethod(
 				"observeLocalStateVersion", SyncState.class);
@@ -305,7 +331,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void newerSnapshotCannotEraseLocalIdentifiedSpec() throws Exception {
+	public void newerSnapshotCannotEraseLocalIdentifiedSpec() throws Exception
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SyncState earlier = tracker.syncState();
 		local(105, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -314,16 +341,17 @@ public class EncounterTickSyncTest {
 		f.setAccessible(true);
 		f.set(plugin, tracker);
 		java.lang.reflect.Method accept = DefenceModule.class.getDeclaredMethod(
-				"incomingVersionIsAcceptable", PartybaseDefDefenceSync.class, SyncState.class, NPC.class);
+				"incomingVersionIsAcceptable", PartybaseDefenceSync.class, SyncState.class, NPC.class);
 		accept.setAccessible(true);
-		PartybaseDefDefenceSync wire = new PartybaseDefDefenceSync(301, earlier, 0, 0, 1, 1, 0, 100, 999);
+		PartybaseDefenceSync wire = new PartybaseDefenceSync(301, earlier, 0, 0, 1, 1, 0, 100, 999);
 		assertEquals(false, accept.invoke(plugin, wire, earlier, npc));
 		assertEquals(2, tracker.specHistory().size());
 		assertEquals(152, tracker.state().getCurrent());
 	}
 
 	@Test
-	public void twoIndependentClocksConvergeThroughStandardEchoIdentityPromotion() {
+	public void twoIndependentClocksConvergeThroughStandardEchoIdentityPromotion()
+	{
 		when(client.getTickCount()).thenReturn(9000);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice", null, 1_000_000L);
 		tracker.onGameTick();
@@ -347,7 +375,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void sharedRaidStartAlignsDifferentLocalCountersAndOrdersSpecs() {
+	public void sharedRaidStartAlignsDifferentLocalCountersAndOrdersSpecs()
+	{
 		String sharedAnchor = "raid-start:1:731";
 		tracker.setSharedTickAnchor(sharedAnchor, 5000);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -375,7 +404,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void sharedRaidClockAloneCannotMergeSeparateBossAttempts() {
+	public void sharedRaidClockAloneCannotMergeSeparateBossAttempts()
+	{
 		String sharedAnchor = "raid-start:1:731";
 		tracker.setSharedTickAnchor(sharedAnchor, 5000);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -393,7 +423,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void specOnBoundaryTickUsesAnchorDiscoveredAtGameTick() {
+	public void specOnBoundaryTickUsesAnchorDiscoveredAtGameTick()
+	{
 		when(client.getTickCount()).thenReturn(5000);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
 		tracker.setSharedTickAnchor("raid-start:3:731", 5000);
@@ -403,7 +434,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void timerBoundaryTickUsesRaidElapsedBase() {
+	public void timerBoundaryTickUsesRaidElapsedBase()
+	{
 		when(client.getTickCount()).thenReturn(5000);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
 		tracker.setSharedTickAnchor("raid-time:v1:tfa:c77", 5000, 50);
@@ -413,7 +445,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void raidTimeAnchorAlignsDifferentLoginCounters() {
+	public void raidTimeAnchorAlignsDifferentLoginCounters()
+	{
 		String anchor = "raid-time:v1:toa:i731";
 		tracker.setSharedTickAnchor(anchor, 5000, 100);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -435,7 +468,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void raidTimeClockClientsConvergeOnOneHistory() {
+	public void raidTimeClockClientsConvergeOnOneHistory()
+	{
 		String anchor = "raid-time:v1:toa:i731";
 		tracker.setSharedTickAnchor(anchor, 5000, 100);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -458,7 +492,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void sameRaidElapsedTickIsASameTickNotAnArrivalOrder() {
+	public void sameRaidElapsedTickIsASameTickNotAnArrivalOrder()
+	{
 		String anchor = "raid-time:v1:toa:i731";
 		tracker.setSharedTickAnchor(anchor, 5000, 100);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -478,11 +513,12 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void distinctIdenticalAttacksAreBothPreserved() {
+	public void distinctIdenticalAttacksAreBothPreserved()
+	{
 		SpecHistoryEntry first = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"first", "clock", 5);
+			"first", "clock", 5);
 		SpecHistoryEntry second = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"second", "clock", 12);
+			"second", "clock", 12);
 
 		List<SpecHistoryEntry> merged = EncounterTimeline.union(Arrays.asList(first), Arrays.asList(second));
 
@@ -493,29 +529,32 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void sameEventIdWithDifferentClockDataIsRejected() {
+	public void sameEventIdWithDifferentClockDataIsRejected()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry own = tracker.specHistory().get(0);
 		SpecHistoryEntry conflicting = new SpecHistoryEntry(own.getPlayerName(), own.getWeapon(),
-				own.getHit(), own.getEventId(), "raid-time:v1:toa:i2", 900);
+			own.getHit(), own.getEventId(), "raid-time:v1:toa:i2", 900);
 
 		assertNull(EncounterTimeline.union(Arrays.asList(own), Arrays.asList(conflicting)));
 	}
 
 	@Test
-	public void differentRaidTimeDomainsRemainUnordered() {
+	public void differentRaidTimeDomainsRemainUnordered()
+	{
 		tracker.setSharedTickAnchor("raid-time:v1:toa:i1", 1000, 0);
 		local(1005, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry local = tracker.specHistory().get(0);
 		SpecHistoryEntry other = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"other", "raid-time:v1:toa:i2", 0);
+			"other", "raid-time:v1:toa:i2", 0);
 
 		assertFalse(EncounterTimeline.before(local, other));
 		assertFalse(EncounterTimeline.before(other, local));
 	}
 
 	@Test
-	public void raidTimeClockAloneCannotMergeSeparateBossAttempts() {
+	public void raidTimeClockAloneCannotMergeSeparateBossAttempts()
+	{
 		String anchor = "raid-time:v1:toa:i731";
 		tracker.setSharedTickAnchor(anchor, 5000, 100);
 		local(5007, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -532,7 +571,8 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void preRaidNegativeTimerTickFallsBackToLocalAnchor() {
+	public void preRaidNegativeTimerTickFallsBackToLocalAnchor()
+	{
 		tracker.setSharedTickAnchor("raid-time:v1:toa:i1", 5000, 0);
 		local(4999, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry entry = tracker.specHistory().get(0);
@@ -542,11 +582,12 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void recoveryWaitsForPendingLocalSpec() {
+	public void recoveryWaitsForPendingLocalSpec()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		SpecHistoryEntry other = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"other", "other", 0);
+			"other", "other", 0);
 		SyncState incoming = state(Arrays.asList(root, other));
 		when(client.getTickCount()).thenReturn(102);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
@@ -557,27 +598,33 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void gsonWireSerializationRetainsEventIdentity() {
+	public void gsonWireSerializationRetainsEventIdentity()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
-		PartybaseDefDefenceSync wire = new PartybaseDefDefenceSync(301, tracker.syncState(), 0, 0, 1, 1, 0, 100, 9);
+		PartybaseDefenceSync wire = new PartybaseDefenceSync(301, tracker.syncState(), 0, 0, 1, 1, 0, 100, 9);
 		com.google.gson.Gson gson = new com.google.gson.Gson();
-		PartybaseDefDefenceSync restored = gson.fromJson(gson.toJson(wire), PartybaseDefDefenceSync.class);
+		PartybaseDefenceSync restored = gson.fromJson(gson.toJson(wire), PartybaseDefenceSync.class);
 		assertEquals(tracker.syncState(), restored.toSyncState());
 		assertEquals(EncounterTimeline.VERSION, restored.getEventVersion());
 	}
 
 	@Test
-	public void replayCapacityReturnsBaselineWithoutApplyingGuessedEvents() {
+	public void replayCapacityReturnsBaselineWithoutApplyingGuessedEvents()
+	{
 		List<SpecHistoryEntry> events = new ArrayList<>();
-		for (int i = 0; i <= EncounterTimeline.MAX_EVENTS; i++) {
+		for (int i = 0; i <= EncounterTimeline.MAX_EVENTS; i++)
+		{
 			events.add(new SpecHistoryEntry("Alice", SpecialWeapon.BANDOS_GODSWORD, 1,
-					"capacity-" + i, "clock", i));
+				"capacity-" + i, "clock", i));
 		}
-		Integer result = EncounterTimeline.replay(events, 310, new EncounterTimeline.Replay<Integer>() {
-			public Integer apply(Integer value, SpecHistoryEntry event) {
+		Integer result = EncounterTimeline.replay(events, 310, new EncounterTimeline.Replay<Integer>()
+		{
+			public Integer apply(Integer value, SpecHistoryEntry event)
+			{
 				throw new AssertionError("Capacity overflow must not evaluate an invented order");
 			}
-			public Integer conservative(Integer a, Integer b) {
+			public Integer conservative(Integer a, Integer b)
+			{
 				return Math.max(a, b);
 			}
 		});
@@ -585,12 +632,14 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void trackerStaysConservativeAfterIdentifiedHistoryExceedsCapacity() {
+	public void trackerStaysConservativeAfterIdentifiedHistoryExceedsCapacity()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		List<SpecHistoryEntry> events = new ArrayList<>();
-		for (int i = 0; i < EncounterTimeline.MAX_EVENTS; i++) {
+		for (int i = 0; i < EncounterTimeline.MAX_EVENTS; i++)
+		{
 			events.add(new SpecHistoryEntry("Alice", SpecialWeapon.BANDOS_GODSWORD, 1,
-					"capacity-" + i, "clock", i));
+				"capacity-" + i, "clock", i));
 		}
 		tracker.applySyncState(state(events), npc);
 		local(500, SpecialWeapon.DRAGON_WARHAMMER, 1);
@@ -602,13 +651,14 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void formattedLegacyEchoCanAcquireIdentityAndRecoverDifferentTickSpec() {
+	public void formattedLegacyEchoCanAcquireIdentityAndRecoverDifferentTickSpec()
+	{
 		local(100, SpecialWeapon.DRAGON_WARHAMMER, 1);
 		SpecHistoryEntry root = tracker.specHistory().get(0);
 		tracker.queue(SpecialWeapon.BANDOS_GODSWORD, 1, 20, 301, "<col=ff0000>BOB</col>");
 		tracker.onGameTick();
 		SpecHistoryEntry remote = new SpecHistoryEntry("bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"remote", root.getTickAnchor(), 5);
+			"remote", root.getTickAnchor(), 5);
 		assertTrue(tracker.mergeEventSyncState(state(Arrays.asList(root, remote)), npc));
 		assertEquals(177, tracker.state().getCurrent());
 		assertEquals(2, tracker.specHistory().size());
@@ -616,23 +666,25 @@ public class EncounterTickSyncTest {
 	}
 
 	@Test
-	public void formattedLegacySharedEventStillProvesOverlap() {
+	public void formattedLegacySharedEventStillProvesOverlap()
+	{
 		tracker.queue(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "<col=ff0000>ALICE</col>");
 		tracker.onGameTick();
 		SpecHistoryEntry root = new SpecHistoryEntry("alice", SpecialWeapon.DRAGON_WARHAMMER, 1,
-				"root", "root", 0);
+			"root", "root", 0);
 		SpecHistoryEntry remote = new SpecHistoryEntry("Bob", SpecialWeapon.BANDOS_GODSWORD, 20,
-				"remote", "root", 5);
+			"remote", "root", 5);
 		assertTrue(tracker.mergeEventSyncState(state(Arrays.asList(root, remote)), npc));
 		assertEquals(177, tracker.state().getCurrent());
 	}
 
 	@Test
-	public void differentPlayersWithOtherwiseSamePayloadDoNotProveOverlap() {
+	public void differentPlayersWithOtherwiseSamePayloadDoNotProveOverlap()
+	{
 		tracker.queue(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
 		tracker.onGameTick();
 		SpecHistoryEntry other = new SpecHistoryEntry("Carol", SpecialWeapon.DRAGON_WARHAMMER, 1,
-				"other", "other", 0);
+			"other", "other", 0);
 		assertFalse(tracker.mergeEventSyncState(state(Arrays.asList(other)), npc));
 		assertEquals(1, tracker.specHistory().size());
 	}

@@ -1,5 +1,7 @@
 package com.matthewloller.partybase.dps;
 
+import com.google.gson.Gson;
+import com.google.inject.Injector;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.dps.model.DefenceDrains;
 import com.matthewloller.partybase.dps.model.Fight;
@@ -17,7 +19,6 @@ import com.matthewloller.partybase.dps.model.RaidPoints;
 import com.matthewloller.partybase.dps.model.RaidScaling;
 import com.matthewloller.partybase.dps.model.TargetMatcher;
 import com.matthewloller.partybase.dps.model.WeaponStyles;
-import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import com.google.inject.Injector;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.JComponent;
@@ -60,7 +60,6 @@ import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.util.Filepath;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ClientShutdown;
 import net.runelite.client.events.ConfigChanged;
@@ -71,6 +70,7 @@ import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.Filepath;
 import net.runelite.client.util.Text;
 
 /**

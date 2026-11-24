@@ -1,33 +1,37 @@
 package com.matthewloller.partybase.defence;
 
+import static org.junit.Assert.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import java.util.Collections;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
+import java.util.Collections;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-public class PartybaseDefDefenceSyncValidationTest {
+public class PartybaseDefenceSyncValidationTest
+{
 	private final Gson gson = new Gson();
 
-	private JsonObject packet() {
+	private JsonObject packet()
+	{
 		SpecHistoryEntry row = new SpecHistoryEntry("Alice", SpecialWeapon.DRAGON_WARHAMMER, 1,
-				"event-1", "raid-start:1:7", 4);
+			"event-1", "raid-start:1:7", 4);
 		SyncState state = new SyncState("Chaos Elemental", BossDefence.CHAOS_ELEMENTAL,
-				189, 0, 270, 270, 270, 270, 270, 70, 70, false, false, false, true,
-				Collections.singletonList(row));
-		return gson.toJsonTree(new PartybaseDefDefenceSync(301, state, 0, 0, 3300, 3900, 2, 100, 1)).getAsJsonObject();
+			189, 0, 270, 270, 270, 270, 270, 70, 70, false, false, false, true,
+			Collections.singletonList(row));
+		return gson.toJsonTree(new PartybaseDefenceSync(301, state, 0, 0, 3300, 3900, 2, 100, 1)).getAsJsonObject();
 	}
 
-	private SyncState decode(JsonObject json) {
-		return gson.fromJson(json, PartybaseDefDefenceSync.class).toSyncState();
+	private SyncState decode(JsonObject json)
+	{
+		return gson.fromJson(json, PartybaseDefenceSync.class).toSyncState();
 	}
 
 	@Test
-	public void completeSnapshotRetainsEventIdentity() {
+	public void completeSnapshotRetainsEventIdentity()
+	{
 		SyncState decoded = decode(packet());
 		assertNotNull(decoded);
 		assertEquals("event-1", decoded.getHistory().get(0).getEventId());
@@ -35,13 +39,14 @@ public class PartybaseDefDefenceSyncValidationTest {
 	}
 
 	@Test
-	public void legacyPacketWithoutOptionalFieldsRemainsReadable() {
+	public void legacyPacketWithoutOptionalFieldsRemainsReadable()
+	{
 		String legacy = "{\"protocolVersion\":1,\"world\":301,\"bossType\":\"CHAOS_ELEMENTAL\","
-				+ "\"bossX\":3300,\"bossY\":3900,\"bossPlane\":2,\"partyId\":7,\"drained\":true,"
-				+ "\"current\":189,\"min\":0,\"base\":270,\"attackLevel\":265,\"strengthLevel\":260,"
-				+ "\"magicLevel\":270,\"magicBaseLevel\":270,\"magicDef\":70,\"magicBaseDef\":70,"
-				+ "\"historyPlayers\":[\"Alice\"],\"historyWeapons\":[\"DRAGON_WARHAMMER\"],\"historyHits\":[1]}";
-		PartybaseDefDefenceSync message = gson.fromJson(legacy, PartybaseDefDefenceSync.class);
+			+ "\"bossX\":3300,\"bossY\":3900,\"bossPlane\":2,\"partyId\":7,\"drained\":true,"
+			+ "\"current\":189,\"min\":0,\"base\":270,\"attackLevel\":265,\"strengthLevel\":260,"
+			+ "\"magicLevel\":270,\"magicBaseLevel\":270,\"magicDef\":70,\"magicBaseDef\":70,"
+			+ "\"historyPlayers\":[\"Alice\"],\"historyWeapons\":[\"DRAGON_WARHAMMER\"],\"historyHits\":[1]}";
+		PartybaseDefenceSync message = gson.fromJson(legacy, PartybaseDefenceSync.class);
 		assertTrue(message.isSupportedProtocol());
 		assertEquals(7L, message.getPartyId());
 		assertEquals(new WorldPoint(3300, 3900, 2), message.getBossLocation());
@@ -54,62 +59,70 @@ public class PartybaseDefDefenceSyncValidationTest {
 	}
 
 	@Test
-	public void compactSnapshotOmitsDefaultsAndPacksTheBossTile() {
+	public void compactSnapshotOmitsDefaultsAndPacksTheBossTile()
+	{
 		JsonObject json = packet();
-		for (String omitted : new String[]{"partyId", "bossX", "bossY", "bossPlane", "at", "st",
-				"n", "u", "dm", "eo", "s", "i"}) {
+		for (String omitted : new String[] {"partyId", "bossX", "bossY", "bossPlane", "at", "st",
+				"n", "u", "dm", "eo", "s", "i"
+			})
+		{
 			assertFalse(omitted, json.has(omitted));
 		}
 		assertTrue(json.get("p").isJsonPrimitive());
-		PartybaseDefDefenceSync message = gson.fromJson(json, PartybaseDefDefenceSync.class);
+		PartybaseDefenceSync message = gson.fromJson(json, PartybaseDefenceSync.class);
 		assertEquals(new WorldPoint(3300, 3900, 2), message.getBossLocation());
 		assertEquals(270, message.toSyncState().getAttackLevel());
 		assertEquals(270, message.toSyncState().getStrengthLevel());
 		assertEquals(100, message.getHealthPercent());
 
 		json.addProperty("p", 1 << 30);
-		assertNull(gson.fromJson(json, PartybaseDefDefenceSync.class).getBossLocation());
+		assertNull(gson.fromJson(json, PartybaseDefenceSync.class).getBossLocation());
 	}
 
 	@Test
-	public void changedBossLevelsAndHistorySurviveCompactRoundTrip() {
+	public void changedBossLevelsAndHistorySurviveCompactRoundTrip()
+	{
 		SpecHistoryEntry row = new SpecHistoryEntry("Alice", SpecialWeapon.BANDOS_GODSWORD,
-				null, 50, "event-1", "raid-start:1:7", 4, 123456L);
+			null, 50, "event-1", "raid-start:1:7", 4, 123456L);
 		SyncState state = new SyncState("Corporeal Beast", BossDefence.CORPOREAL_BEAST,
-				0, 0, 310, 0, 17, 120, 150, -5, -5, false, false, false, true,
-				Collections.singletonList(row));
-		PartybaseDefDefenceSync message = new PartybaseDefDefenceSync(301, state, PartybaseDefDefenceSync.SCOPE_INSTANCE,
-				42, 3300, 3900, 2, 80, 9);
+			0, 0, 310, 0, 17, 120, 150, -5, -5, false, false, false, true,
+			Collections.singletonList(row));
+		PartybaseDefenceSync message = new PartybaseDefenceSync(301, state, PartybaseDefenceSync.SCOPE_INSTANCE,
+			42, 3300, 3900, 2, 80, 9);
 		JsonObject json = gson.toJsonTree(message).getAsJsonObject();
 		assertFalse(json.has("h"));
-		assertEquals(-1, gson.fromJson(json, PartybaseDefDefenceSync.class).getHealthPercent());
+		assertEquals(-1, gson.fromJson(json, PartybaseDefenceSync.class).getHealthPercent());
 		assertEquals(state, decode(json));
 	}
 
-	static PartybaseDefDefenceSync withLegacyPartyId(PartybaseDefDefenceSync message, long partyId) {
+	static PartybaseDefenceSync withLegacyPartyId(PartybaseDefenceSync message, long partyId)
+	{
 		Gson gson = new Gson();
 		JsonObject json = gson.toJsonTree(message).getAsJsonObject();
 		json.addProperty("v", 1);
 		json.addProperty("partyId", partyId);
-		return gson.fromJson(json, PartybaseDefDefenceSync.class);
+		return gson.fromJson(json, PartybaseDefenceSync.class);
 	}
 
 	@Test
-	public void mismatchedArraysCannotSilentlyLoseEvents() {
+	public void mismatchedArraysCannotSilentlyLoseEvents()
+	{
 		JsonObject json = packet();
 		json.getAsJsonArray("hh").add(50);
 		assertNull(decode(json));
 	}
 
 	@Test
-	public void unknownWeaponRejectsEntireSnapshot() {
+	public void unknownWeaponRejectsEntireSnapshot()
+	{
 		JsonObject json = packet();
 		json.getAsJsonArray("hw").set(0, gson.toJsonTree("UNSUPPORTED"));
 		assertNull(decode(json));
 	}
 
 	@Test
-	public void invalidAbsoluteTotalIsRejected() {
+	public void invalidAbsoluteTotalIsRejected()
+	{
 		JsonObject json = packet();
 		json.addProperty("d", -1);
 		assertNull(decode(json));
@@ -119,14 +132,16 @@ public class PartybaseDefDefenceSyncValidationTest {
 	}
 
 	@Test
-	public void uncertainPeerCannotSupplyAnAuthoritativeTotal() {
+	public void uncertainPeerCannotSupplyAnAuthoritativeTotal()
+	{
 		JsonObject json = packet();
 		json.addProperty("u", true);
 		assertNull(decode(json));
 	}
 
 	@Test
-	public void negativeHitAndMissingHistoryAreRejected() {
+	public void negativeHitAndMissingHistoryAreRejected()
+	{
 		JsonObject json = packet();
 		json.getAsJsonArray("hh").set(0, gson.toJsonTree(-1));
 		assertNull(decode(json));
@@ -136,7 +151,8 @@ public class PartybaseDefDefenceSyncValidationTest {
 	}
 
 	@Test
-	public void unsupportedEventVersionFallsBackWithoutDroppingTheRow() {
+	public void unsupportedEventVersionFallsBackWithoutDroppingTheRow()
+	{
 		JsonObject json = packet();
 		json.addProperty("ev", 999);
 		SyncState decoded = decode(json);

@@ -24,14 +24,7 @@
  */
 package com.matthewloller.partybase.ui.skills;
 
-import net.runelite.api.gameval.SpriteID;
-import net.runelite.client.game.SpriteManager;
-import net.runelite.client.ui.FontManager;
-import net.runelite.client.util.ImageUtil;
 import com.matthewloller.partybase.ImgUtil;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -39,6 +32,12 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import net.runelite.api.gameval.SpriteID;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.ui.FontManager;
+import net.runelite.client.util.ImageUtil;
 
 public class TotalPanelSlot extends JPanel
 {

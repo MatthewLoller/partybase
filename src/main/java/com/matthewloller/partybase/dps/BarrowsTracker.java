@@ -1,11 +1,11 @@
 package com.matthewloller.partybase.dps;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.dps.model.BarrowsRun;
 import com.matthewloller.partybase.dps.model.FightTracker;
 import com.matthewloller.partybase.dps.model.Format;
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;

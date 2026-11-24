@@ -54,7 +54,7 @@ final class EncounterScopes
 		}
 		if (boss.has(BossDefence.Flag.COX_SCALED))
 		{
-			return PartybaseDefDefenceSync.SCOPE_COX;
+			return PartybaseDefenceSync.SCOPE_COX;
 		}
 		switch (boss)
 		{
@@ -63,7 +63,7 @@ final class EncounterScopes
 			case NYLOCAS_VASILIAS:
 			case SOTETSEG:
 			case XARPUS:
-				return PartybaseDefDefenceSync.SCOPE_TOB;
+				return PartybaseDefenceSync.SCOPE_TOB;
 			default:
 				return -1;
 		}

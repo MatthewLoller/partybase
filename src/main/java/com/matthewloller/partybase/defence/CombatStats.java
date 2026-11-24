@@ -7,7 +7,8 @@ import net.runelite.api.NPC;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 
 // Mutable stats for one encounter. The tracker owns target and party state.
-final class CombatStats {
+final class CombatStats
+{
 	private static final int DWH_DRAIN_PCT = 30;
 	private static final int ELDER_MAUL_DRAIN_PCT = 35;
 	// Condemn keeps 85% of current values.
@@ -39,9 +40,11 @@ final class CombatStats {
 	boolean accursedApplied;
 	boolean drained;
 
-	static CombatStats initial(BossDefence boss, int partySize, boolean inCoxRaid, boolean challengeMode) {
+	static CombatStats initial(BossDefence boss, int partySize, boolean inCoxRaid, boolean challengeMode)
+	{
 		CombatStats stats = new CombatStats();
-		if (boss == null) {
+		if (boss == null)
+		{
 			return stats;
 		}
 
@@ -55,7 +58,8 @@ final class CombatStats {
 		stats.demon = boss.has(BossDefence.Flag.DEMON);
 
 		// CoX scales combat levels, not the magic-defence bonus.
-		if (boss.has(BossDefence.Flag.COX_SCALED) && inCoxRaid) {
+		if (boss.has(BossDefence.Flag.COX_SCALED) && inCoxRaid)
+		{
 			int players = Math.max(1, partySize);
 			int extraPlayers = players - 1;
 			int defensivePercent = DefenceMath.coxDefensivePercent(extraPlayers);
@@ -64,14 +68,15 @@ final class CombatStats {
 
 			stats.defence = stats.defence * defensivePercent / DefenceMath.PERCENT;
 			stats.magicLevel = stats.magicLevel
-					* (magicIsDefensive ? defensivePercent : offensivePercent) / DefenceMath.PERCENT;
+				* (magicIsDefensive ? defensivePercent : offensivePercent) / DefenceMath.PERCENT;
 
-			if (challengeMode) {
+			if (challengeMode)
+			{
 				int challengeModeDefence = boss.has(BossDefence.Flag.TEKTON_CM)
-						? (players < TEKTON_CM_SMALL_PARTY
-								? TEKTON_CM_DEFENCE_PCT_SMALL_PARTY
-								: TEKTON_CM_DEFENCE_PCT)
-						: CM_SCALE_PCT;
+					? (players < TEKTON_CM_SMALL_PARTY
+						? TEKTON_CM_DEFENCE_PCT_SMALL_PARTY
+						: TEKTON_CM_DEFENCE_PCT)
+					: CM_SCALE_PCT;
 				stats.defence = DefenceMath.addPercent(stats.defence, challengeModeDefence);
 				stats.magicLevel = DefenceMath.addPercent(
 						stats.magicLevel, magicIsDefensive ? challengeModeDefence : CM_SCALE_PCT);
@@ -84,7 +89,8 @@ final class CombatStats {
 		return stats;
 	}
 
-	static CombatStats fromSync(SyncState sync) {
+	static CombatStats fromSync(SyncState sync)
+	{
 		CombatStats stats = new CombatStats();
 		stats.defence = sync.getCurrent();
 		stats.minDefence = sync.getMin();
@@ -102,7 +108,8 @@ final class CombatStats {
 		return stats;
 	}
 
-	CombatStats copy() {
+	CombatStats copy()
+	{
 		CombatStats copy = new CombatStats();
 		copy.defence = defence;
 		copy.startDefence = startDefence;
@@ -120,7 +127,8 @@ final class CombatStats {
 		return copy;
 	}
 
-	CombatStats undrainedBaseline(BossDefence boss) {
+	CombatStats undrainedBaseline(BossDefence boss)
+	{
 		CombatStats baseline = copy();
 		baseline.defence = baseline.startDefence;
 		baseline.attackLevel = boss.getBaseAtk();
@@ -132,8 +140,10 @@ final class CombatStats {
 		return baseline;
 	}
 
-	void applyHistoryEvent(SpecHistoryEntry event, NPC npc, BossDefence bossType, String bossName) {
-		if (event.getSpell() != null) {
+	void applyHistoryEvent(SpecHistoryEntry event, NPC npc, BossDefence bossType, String bossName)
+	{
+		if (event.getSpell() != null)
+		{
 			applySpell(event.getSpell(), bossType);
 			return;
 		}
@@ -141,19 +151,23 @@ final class CombatStats {
 		applyWeapon(event.getWeapon(), hit, npc, bossName);
 	}
 
-	void applySpell(SpellDrain spell, BossDefence bossType) {
+	void applySpell(SpellDrain spell, BossDefence bossType)
+	{
 		defence = spell.reduce(defence, startDefence, minDefence);
-		if (spell == SpellDrain.SHADOW_BARRAGE) {
+		if (spell == SpellDrain.SHADOW_BARRAGE)
+		{
 			attackLevel = spell.reduce(attackLevel, bossType.getBaseAtk(), 0);
 			strengthLevel = spell.reduce(strengthLevel, bossType.getBaseStr(), 0);
 		}
 	}
 
-	void applyWeapon(SpecialWeapon weapon, int hit, NPC npc, String bossName) {
+	void applyWeapon(SpecialWeapon weapon, int hit, NPC npc, String bossName)
+	{
 		// DWH and Elder Maul use current defence.
 		// Arclight-family drains use the encounter base.
 		long base = startDefence;
-		switch (weapon) {
+		switch (weapon)
+		{
 			case DRAGON_WARHAMMER:
 				drainCurrentDefence(weapon, hit, npc, DWH_DRAIN_PCT);
 				break;
@@ -161,10 +175,11 @@ final class CombatStats {
 				drainCurrentDefence(weapon, hit, npc, ELDER_MAUL_DRAIN_PCT);
 				break;
 			case BANDOS_GODSWORD:
-				if (hit > 0) {
+				if (hit > 0)
+				{
 					// Corp and undowned Bloat take double BGS.
 					boolean doubled = bossName.equalsIgnoreCase("Corporeal Beast")
-							|| bossName.equalsIgnoreCase("Pestilent Bloat");
+						|| bossName.equalsIgnoreCase("Pestilent Bloat");
 					applyBandos(doubled ? hit * 2L : hit);
 				}
 				break;
@@ -184,13 +199,15 @@ final class CombatStats {
 				break;
 			case BONE_DAGGER:
 			case DORGESHUUN_CROSSBOW:
-				if (defence >= base) {
+				if (defence >= base)
+				{
 					defence -= hit;
 				}
 				break;
 			case ACCURSED_SCEPTRE:
 				// Only the first landed Condemn applies.
-				if (hit > 0 && !accursedApplied) {
+				if (hit > 0 && !accursedApplied)
+				{
 					accursedApplied = true;
 					defence = defence * CONDEMN_KEEPS_PCT / DefenceMath.PERCENT;
 					magicLevel = magicLevel * CONDEMN_KEEPS_PCT / DefenceMath.PERCENT;
@@ -202,7 +219,8 @@ final class CombatStats {
 				break;
 			case EYE_OF_AYAK:
 				// Soul Rend drains magic-defence bonus down to zero.
-				if (hit > 0 && magicDefenceBonus > 0) {
+				if (hit > 0 && magicDefenceBonus > 0)
+				{
 					magicDefenceBonus = Math.max(0, magicDefenceBonus - hit);
 				}
 				break;
@@ -213,7 +231,8 @@ final class CombatStats {
 		magicLevel = Math.max(magicLevel, 0);
 	}
 
-	void keepConservativeMaximum(CombatStats other) {
+	void keepConservativeMaximum(CombatStats other)
+	{
 		defence = Math.max(defence, other.defence);
 		attackLevel = Math.max(attackLevel, other.attackLevel);
 		strengthLevel = Math.max(strengthLevel, other.strengthLevel);
@@ -223,22 +242,26 @@ final class CombatStats {
 	}
 
 	// Skip equivalent orders that unlock the same events.
-	static String effectKey(SpecHistoryEntry event, NPC npc) {
-		if (event != null && event.getSpell() != null) {
+	static String effectKey(SpecHistoryEntry event, NPC npc)
+	{
+		if (event != null && event.getSpell() != null)
+		{
 			return event.getSpell().name();
 		}
-		if (event == null || event.getWeapon() == null) {
+		if (event == null || event.getWeapon() == null)
+		{
 			return null;
 		}
 		SpecialWeapon weapon = event.getWeapon();
 		int hit = npc == null ? event.getHit() : weapon.computeHit(event.getHit(), npc);
-		switch (weapon) {
+		switch (weapon)
+		{
 			case DRAGON_WARHAMMER:
 			case ELDER_MAUL:
 				// Only whether the hit landed and Tekton's miss drain affect the result.
 				return hit > 0
-						? weapon.name() + ":positive"
-						: weapon.name() + ":zero:" + (weapon.computeDrainPercent(hit, npc) > 0 ? 1 : 0);
+					? weapon.name() + ":positive"
+					: weapon.name() + ":zero:" + (weapon.computeDrainPercent(hit, npc) > 0 ? 1 : 0);
 			case ARCLIGHT:
 			case DARKLIGHT:
 			case EMBERLIGHT:
@@ -253,22 +276,29 @@ final class CombatStats {
 		}
 	}
 
-	private void drainCurrentDefence(SpecialWeapon weapon, int hit, NPC npc, int percent) {
-		if (hit > 0) {
+	private void drainCurrentDefence(SpecialWeapon weapon, int hit, NPC npc, int percent)
+	{
+		if (hit > 0)
+		{
 			defence -= defence * percent / DefenceMath.PERCENT;
-		} else if (weapon.computeDrainPercent(hit, npc) > 0) {
+		}
+		else if (weapon.computeDrainPercent(hit, npc) > 0)
+		{
 			// Tekton hammer and maul misses drain 5%.
 			defence -= defence * 5 / DefenceMath.PERCENT;
 		}
 	}
 
-	private void drainBaseDefence(int hit, int percent, int demonPercent) {
-		if (hit > 0) {
+	private void drainBaseDefence(int hit, int percent, int demonPercent)
+	{
+		if (hit > 0)
+		{
 			defence -= startDefence * (demon ? demonPercent : percent) / DefenceMath.PERCENT + 1;
 		}
 	}
 
-	private void applyBandos(long damage) {
+	private void applyBandos(long damage)
+	{
 		DefenceMath.BandosResult result = DefenceMath.applyBandos(
 				defence, minDefence, strengthLevel, attackLevel, magicLevel, damage);
 		defence = result.getDefence();

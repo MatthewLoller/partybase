@@ -8,17 +8,20 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
-public class RaidTimerClockTest {
+public class RaidTimerClockTest
+{
 	private static final String TOA_SCOPE = "i731";
 
-	private RaidTimerClock running(int localTick, int elapsed) {
+	private RaidTimerClock running(int localTick, int elapsed)
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		assertTrue(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, elapsed, false, localTick));
 		return clock;
 	}
 
 	@Test
-	public void differentLoginCountersShareTheSameElapsedTick() {
+	public void differentLoginCountersShareTheSameElapsedTick()
+	{
 		RaidTimerClock first = running(5_000, 0);
 		RaidTimerClock second = running(120, 0);
 
@@ -28,7 +31,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void lateJoinUsesTheElapsedValueItActuallySaw() {
+	public void lateJoinUsesTheElapsedValueItActuallySaw()
+	{
 		RaidTimerClock late = running(9_000, 512);
 
 		assertEquals(521L, late.tickAt(9_009));
@@ -38,7 +42,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void lateJoinerAndEarlyClientAgreeOnTheSameRealTick() {
+	public void lateJoinerAndEarlyClientAgreeOnTheSameRealTick()
+	{
 		RaidTimerClock early = running(1_000, 0);
 		RaidTimerClock late = running(9_000, 500);
 
@@ -46,13 +51,15 @@ public class RaidTimerClockTest {
 		// sampled elapsed 500 at local tick 9000. Nine ticks later both must agree.
 		assertEquals(509L, early.tickAt(1_509));
 		assertEquals(509L, late.tickAt(9_009));
-		for (int offset = 0; offset < 30; offset++) {
+		for (int offset = 0; offset < 30; offset++)
+		{
 			assertEquals(early.tickAt(1_500 + offset), late.tickAt(9_000 + offset));
 		}
 	}
 
 	@Test
-	public void resampleCorrectionRebasesFutureTicksWithoutHistory() {
+	public void resampleCorrectionRebasesFutureTicksWithoutHistory()
+	{
 		RaidTimerClock clock = running(1_000, 0);
 
 		assertEquals(100L, clock.tickAt(1_100));
@@ -62,7 +69,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void stoppedTimerNeverExtrapolates() {
+	public void stoppedTimerNeverExtrapolates()
+	{
 		RaidTimerClock clock = running(1_000, 0);
 		assertTrue(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, 40, true, 1_040));
 
@@ -72,7 +80,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void clearedTimerDeactivatesAndReleasesItsDomain() {
+	public void clearedTimerDeactivatesAndReleasesItsDomain()
+	{
 		RaidTimerClock clock = running(1_000, 25);
 		assertTrue(clock.isActive());
 
@@ -83,7 +92,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void backwardResetStartsANewElapsedEpoch() {
+	public void backwardResetStartsANewElapsedEpoch()
+	{
 		RaidTimerClock clock = running(1_000, 0);
 		assertTrue(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, 500, false, 1_500));
 		assertEquals(505L, clock.tickAt(1_505));
@@ -96,7 +106,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void switchingRaidTypeCannotReuseTheOldDomain() {
+	public void switchingRaidTypeCannotReuseTheOldDomain()
+	{
 		RaidTimerClock clock = running(1_000, 10);
 		String toaDomain = clock.domain();
 
@@ -107,34 +118,39 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void stoppedSampleWithoutARunningClockIsIgnored() {
+	public void stoppedSampleWithoutARunningClockIsIgnored()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, 90, true, 1_000));
 		assertFalse(clock.isActive());
 	}
 
 	@Test
-	public void anotherSourcesClearCannotClearTheActiveClock() {
+	public void anotherSourcesClearCannotClearTheActiveClock()
+	{
 		RaidTimerClock clock = running(1_000, 10);
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_COX, "i731", -1, false, 1_001));
 		assertTrue(clock.isActiveFor(RaidTimerClock.SOURCE_TOA));
 	}
 
 	@Test
-	public void negativeLocalTickIsRejected() {
+	public void negativeLocalTickIsRejected()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, 0, false, -1));
 	}
 
 	@Test
-	public void domainStaysWithinTheWireLimitEvenForALongScope() {
+	public void domainStaysWithinTheWireLimitEvenForALongScope()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		String scope = new String(new char[120]).replace('\0', 'x');
 		assertFalse(clock.sample(RaidTimerClock.SOURCE_TOA, scope, 0, false, 1_000));
 	}
 
 	@Test
-	public void pausedTimerResumesFromItsNewSample() {
+	public void pausedTimerResumesFromItsNewSample()
+	{
 		RaidTimerClock clock = running(1_000, 0);
 		assertTrue(clock.sample(RaidTimerClock.SOURCE_TOA, TOA_SCOPE, 10, true, 1_010));
 		assertEquals(RaidTimerClock.NO_TICK, clock.tickAt(1_020));
@@ -145,7 +161,8 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void smallResyncKeepsTheEstablishedDomain() {
+	public void smallResyncKeepsTheEstablishedDomain()
+	{
 		RaidTimerClock clock = running(1_000, 0);
 		String domain = clock.domain();
 
@@ -157,49 +174,53 @@ public class RaidTimerClockTest {
 	}
 
 	@Test
-	public void displayCallbacksAndNestedScriptsAreNotTimerInputs() {
-		assertNull(RaidTimerClock.parseTimerScript(6581, new Object[]{6581, 0, 0}));
-		assertNull(RaidTimerClock.parseTimerScript(6582, new Object[]{6582, 0, 0}));
-		assertNull(RaidTimerClock.parseTimerScript(10037, new Object[]{10037, 0, 0}));
-		assertNull(RaidTimerClock.parseTimerScript(10038, new Object[]{10038, 0, 0}));
+	public void displayCallbacksAndNestedScriptsAreNotTimerInputs()
+	{
+		assertNull(RaidTimerClock.parseTimerScript(6581, new Object[] {6581, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(6582, new Object[] {6582, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(10037, new Object[] {10037, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(10038, new Object[] {10038, 0, 0}));
 	}
 
 	@Test
-	public void tobHudScriptsAreNotTimerInputs() {
+	public void tobHudScriptsAreNotTimerInputs()
+	{
 		// ToB's HUD is room progress, not an elapsed timer; none of these may be treated
 		// as a sample even when they carry integers in the same argument positions.
-		assertNull(RaidTimerClock.parseTimerScript(2296, new Object[]{2296, 0, 0}));
-		assertNull(RaidTimerClock.parseTimerScript(2304, new Object[]{2304, 0, 0}));
-		assertNull(RaidTimerClock.parseTimerScript(4490, new Object[]{4490, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(2296, new Object[] {2296, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(2304, new Object[] {2304, 0, 0}));
+		assertNull(RaidTimerClock.parseTimerScript(4490, new Object[] {4490, 0, 0}));
 	}
 
 	@Test
-	public void timerScriptArgumentsAreStrictlyValidated() {
+	public void timerScriptArgumentsAreStrictlyValidated()
+	{
 		assertNotNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, 12, 0}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, 12, 0}));
 		assertNotNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TFA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TFA_TIMER_SCRIPT, -1, 1}));
+			new Object[] {RaidTimerClock.TFA_TIMER_SCRIPT, -1, 1}));
 
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT, null));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, 12}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, 12}));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{9999, 12, 0}));
+			new Object[] {9999, 12, 0}));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, "12", 0}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, "12", 0}));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, -2, 0}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, -2, 0}));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, RaidTimerClock.MAX_ELAPSED_TICKS + 1, 0}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, RaidTimerClock.MAX_ELAPSED_TICKS + 1, 0}));
 		assertNull(RaidTimerClock.parseTimerScript(RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, 12, 0, 99}));
+			new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, 12, 0, 99}));
 	}
 
 	@Test
-	public void parsedStoppedFlagUsesTheRawTickValue() {
+	public void parsedStoppedFlagUsesTheRawTickValue()
+	{
 		RaidTimerClock.TimerInput input = RaidTimerClock.parseTimerScript(
 				RaidTimerClock.TOA_TIMER_SCRIPT,
-				new Object[]{RaidTimerClock.TOA_TIMER_SCRIPT, 1_234, 1});
+				new Object[] {RaidTimerClock.TOA_TIMER_SCRIPT, 1_234, 1});
 
 		assertNotNull(input);
 		assertEquals(RaidTimerClock.SOURCE_TOA, input.source);

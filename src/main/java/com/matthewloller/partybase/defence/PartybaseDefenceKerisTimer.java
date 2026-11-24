@@ -6,7 +6,8 @@ import net.runelite.client.party.messages.PartyMemberMessage;
 
 // Red Keris effect with original impact timing.
 @ToString(doNotUseGetters = true)
-public class PartybaseDefKerisTimer extends PartyMemberMessage {
+public class PartybaseDefenceKerisTimer extends PartyMemberMessage
+{
 	static final int PROTOCOL_VERSION = 1;
 	private static final int TICK_MILLIS = 600;
 
@@ -25,11 +26,13 @@ public class PartybaseDefKerisTimer extends PartyMemberMessage {
 	private String clockScope;
 	private long hitRaidTick;
 
-	public PartybaseDefKerisTimer() {
+	public PartybaseDefenceKerisTimer()
+	{
 	}
 
-	PartybaseDefKerisTimer(long partyId, int world, BossDefence boss, int scopeType, int scopeId,
-			int npcId, WorldPoint point, long hitAtMillis, String clockScope, long hitRaidTick) {
+	PartybaseDefenceKerisTimer(long partyId, int world, BossDefence boss, int scopeType, int scopeId,
+		int npcId, WorldPoint point, long hitAtMillis, String clockScope, long hitRaidTick)
+	{
 		protocolVersion = PROTOCOL_VERSION;
 		this.partyId = partyId;
 		this.world = world;
@@ -45,50 +48,64 @@ public class PartybaseDefKerisTimer extends PartyMemberMessage {
 		this.hitRaidTick = hitRaidTick;
 	}
 
-	int remainingTicks(long now, String localClockScope, long raidTick) {
+	int remainingTicks(long now, String localClockScope, long raidTick)
+	{
 		int duration = BossEffectTracker.KERIS_EFFECT_TICKS;
 		long age = now - hitAtMillis;
-		if (hitAtMillis <= 0 || age < -TICK_MILLIS || age >= duration * TICK_MILLIS) {
+		if (hitAtMillis <= 0 || age < -TICK_MILLIS || age >= duration * TICK_MILLIS)
+		{
 			return 0;
 		}
-		if (clockScope != null && clockScope.equals(localClockScope) && hitRaidTick >= 0 && raidTick >= 0) {
+		if (clockScope != null && clockScope.equals(localClockScope) && hitRaidTick >= 0 && raidTick >= 0)
+		{
 			long elapsed = raidTick - hitRaidTick;
 			return elapsed < 0 || elapsed >= duration ? 0 : duration - (int) elapsed;
 		}
 		return duration - (int) (Math.max(0, age) / TICK_MILLIS);
 	}
 
-	int getProtocolVersion() {
+	int getProtocolVersion()
+	{
 		return protocolVersion;
 	}
-	long getPartyId() {
+	long getPartyId()
+	{
 		return partyId;
 	}
-	int getWorld() {
+	int getWorld()
+	{
 		return world;
 	}
-	BossDefence getBoss() {
+	BossDefence getBoss()
+	{
 		return boss == null ? null : boss.trackingType();
 	}
-	int getScopeType() {
+	int getScopeType()
+	{
 		return scopeType;
 	}
-	int getScopeId() {
+	int getScopeId()
+	{
 		return scopeId;
 	}
-	int getNpcId() {
+	int getNpcId()
+	{
 		return npcId;
 	}
-	int getBossX() {
+	int getBossX()
+	{
 		return bossX;
 	}
-	int getBossY() {
+	int getBossY()
+	{
 		return bossY;
 	}
-	int getBossPlane() {
+	int getBossPlane()
+	{
 		return bossPlane;
 	}
-	long getHitAtMillis() {
+	long getHitAtMillis()
+	{
 		return hitAtMillis;
 	}
 }

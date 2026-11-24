@@ -1,9 +1,9 @@
 package com.matthewloller.partybase.defence;
 
+import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 
 /**
@@ -62,7 +62,7 @@ final class SpecWeaponSummary
 	{
 		String unit = weapon.isDamage() ? "reported amount" : "successful hits";
 		StringBuilder out = new StringBuilder(weapon.getName()).append("<br>")
-			.append(unit).append(": ").append(value);
+		.append(unit).append(": ").append(value);
 		if (missedAttempts > 0)
 		{
 			out.append("<br><col=ff4040>Misses: ").append(missedAttempts).append("</col>");

@@ -1,25 +1,26 @@
 package com.matthewloller.partybase.defence;
 
-import com.matthewloller.partybase.PartybaseConfig;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.awt.Color;
-import java.awt.image.BufferedImage;
+import com.matthewloller.partybase.PartybaseConfig;
 import com.matthewloller.partybase.PartybaseConfig.DefenceThresholdUnit;
 import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import net.runelite.client.plugins.Plugin;
 import org.junit.Test;
 
 /** The Defence infobox shares the overhead palette and thresholds. */
-public class DefenceInfoBoxColorTest {
+public class DefenceInfoBoxColorTest
+{
 	private static final Color HIGH = new Color(0xeeeeee);
 	private static final Color LOW = new Color(0xcca233);
 	private static final Color CAPPED = new Color(0x579549);
 	private static final Color DRAIN_AMOUNT = new Color(0xcc0066);
 
-	private PartybaseConfig config() {
+	private PartybaseConfig config()
+	{
 		PartybaseConfig config = mock(PartybaseConfig.class);
 		when(config.defenceHighColor()).thenReturn(HIGH);
 		when(config.defenceLowColor()).thenReturn(LOW);
@@ -30,17 +31,19 @@ public class DefenceInfoBoxColorTest {
 		return config;
 	}
 
-	private static DefenceState state(long current, long floor, long base) {
+	private static DefenceState state(long current, long floor, long base)
+	{
 		return new DefenceState(24, "Test Boss", current, floor, base,
 				25000, 25000, 100, 100, 290, 290, true, true);
 	}
 
-	private static void check(DefenceState state, PartybaseConfig config, Color expected) {
+	private static void check(DefenceState state, PartybaseConfig config, Color expected)
+	{
 		DefenceTracker tracker = mock(DefenceTracker.class);
 		when(tracker.state()).thenReturn(state);
 		DefenceInfoBox box = new DefenceInfoBox(
-				new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
-				mock(Plugin.class), tracker, config);
+			new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+			mock(Plugin.class), tracker, config);
 		assertEquals("Defence infobox colour", expected, box.getTextColor());
 		assertEquals("Defence overhead colour", expected, DefenceReadout.defenceColor(state, config));
 		// Independently configured drain-amount colour must never drive this text.
@@ -48,25 +51,29 @@ public class DefenceInfoBoxColorTest {
 	}
 
 	@Test
-	public void cappedBossUsesFullyDrainedColourEvenWithPositiveDefenceFloor() {
+	public void cappedBossUsesFullyDrainedColourEvenWithPositiveDefenceFloor()
+	{
 		check(state(156, 156, 260), config(), CAPPED); // Archive Guardian
 		check(state(0, 0, 100), config(), CAPPED); // Dagon'hai monk
 		check(state(150, 150, 250), config(), CAPPED); // Ocellus final phase
 	}
 
 	@Test
-	public void lowDefenceUsesLowColourUntilTheFloorIsReached() {
+	public void lowDefenceUsesLowColourUntilTheFloorIsReached()
+	{
 		check(state(161, 156, 260), config(), LOW);
 		check(state(166, 156, 260), config(), LOW);
 	}
 
 	@Test
-	public void defenceAboveLowThresholdUsesNormalColour() {
+	public void defenceAboveLowThresholdUsesNormalColour()
+	{
 		check(state(182, 156, 260), config(), HIGH);
 	}
 
 	@Test
-	public void percentLowThresholdAlsoMatchesOverheadTransitions() {
+	public void percentLowThresholdAlsoMatchesOverheadTransitions()
+	{
 		PartybaseConfig c = config();
 		when(c.defenceLowThresholdUnit()).thenReturn(DefenceThresholdUnit.PERCENT);
 		when(c.defenceLowThreshold()).thenReturn(10);
@@ -77,24 +84,26 @@ public class DefenceInfoBoxColorTest {
 	}
 
 	@Test
-	public void magicDefenceInfoboxColourIsUntouched() {
+	public void magicDefenceInfoboxColourIsUntouched()
+	{
 		PartybaseConfig c = config();
 		Color magicColour = new Color(0x0088ee);
 		when(c.magicDefenceColor()).thenReturn(magicColour);
 		DefenceTracker tracker = mock(DefenceTracker.class);
 		when(tracker.state()).thenReturn(state(156, 156, 260));
 		DefenceInfoBox box = new DefenceInfoBox(
-				new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
-				mock(Plugin.class), tracker, c, DefenceInfoBox.Stat.MAGIC_DEFENCE);
+			new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+			mock(Plugin.class), tracker, c, DefenceInfoBox.Stat.MAGIC_DEFENCE);
 		assertEquals(magicColour, box.getTextColor());
 	}
 
 	@Test
-	public void noActiveTargetUsesWhiteFallback() {
+	public void noActiveTargetUsesWhiteFallback()
+	{
 		DefenceTracker tracker = mock(DefenceTracker.class);
 		DefenceInfoBox box = new DefenceInfoBox(
-				new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
-				mock(Plugin.class), tracker, config());
+			new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+			mock(Plugin.class), tracker, config());
 		assertEquals(Color.WHITE, box.getTextColor());
 	}
 }

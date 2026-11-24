@@ -1,11 +1,11 @@
 package com.matthewloller.partybase.defence;
 
 import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
@@ -250,7 +250,7 @@ final class DefenceDisplayController
 		}
 
 		Map<SpecialWeapon, SpecWeaponSummary> summaries = SpecWeaponSummary.fromHistory(
-			tracker.specHistoryForCurrentTarget(state.getNpcIndex()));
+				tracker.specHistoryForCurrentTarget(state.getNpcIndex()));
 		for (SpecialWeapon existing : new ArrayList<>(specWeaponBoxes.keySet()))
 		{
 			if (!summaries.containsKey(existing))

@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.WorldView;
@@ -14,9 +13,11 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.party.PartyService;
 import org.junit.Test;
 
-public class EncounterScopeResolverTest {
+public class EncounterScopeResolverTest
+{
 	@Test
-	public void healthPercentageClampsKnownValuesAndPreservesUnknownValues() {
+	public void healthPercentageClampsKnownValuesAndPreservesUnknownValues()
+	{
 		NPC npc = mock(NPC.class);
 		when(npc.getHealthRatio()).thenReturn(3);
 		when(npc.getHealthScale()).thenReturn(4);
@@ -28,7 +29,8 @@ public class EncounterScopeResolverTest {
 	}
 
 	@Test
-	public void healthToleranceMatchesOnlyWhenBothClientsKnowTheValue() {
+	public void healthToleranceMatchesOnlyWhenBothClientsKnowTheValue()
+	{
 		NPC npc = mock(NPC.class);
 		when(npc.getHealthRatio()).thenReturn(50);
 		when(npc.getHealthScale()).thenReturn(100);
@@ -42,7 +44,8 @@ public class EncounterScopeResolverTest {
 	}
 
 	@Test
-	public void missingRaidControllerUsesInstanceForTransportButNotRaidLifecycle() {
+	public void missingRaidControllerUsesInstanceForTransportButNotRaidLifecycle()
+	{
 		Client client = mock(Client.class);
 		WorldView world = mock(WorldView.class);
 		when(client.getTopLevelWorldView()).thenReturn(world);
@@ -52,16 +55,16 @@ public class EncounterScopeResolverTest {
 		EncounterScopeResolver resolver = new EncounterScopeResolver(client, mock(PartyService.class));
 		int fingerprint = EncounterScopes.instanceFingerprint(world);
 
-		assertEquals(new SyncScope(PartybaseDefDefenceSync.SCOPE_INSTANCE, fingerprint),
-				resolver.forBoss(BossDefence.TEKTON, null));
+		assertEquals(new SyncScope(PartybaseDefenceSync.SCOPE_INSTANCE, fingerprint),
+			resolver.forBoss(BossDefence.TEKTON, null));
 		assertNull(resolver.currentRaidScopeForBoss(BossDefence.TEKTON));
-		assertTrue(resolver.scopeMatches(PartybaseDefDefenceSync.SCOPE_INSTANCE, fingerprint, BossDefence.TEKTON));
-		assertFalse(resolver.scopeMatches(PartybaseDefDefenceSync.SCOPE_INSTANCE, fingerprint + 1, BossDefence.TEKTON));
+		assertTrue(resolver.scopeMatches(PartybaseDefenceSync.SCOPE_INSTANCE, fingerprint, BossDefence.TEKTON));
+		assertFalse(resolver.scopeMatches(PartybaseDefenceSync.SCOPE_INSTANCE, fingerprint + 1, BossDefence.TEKTON));
 
 		when(client.getVarpValue(VarPlayerID.RAIDS_PARTY_GROUPHOLDER)).thenReturn(42);
-		assertEquals(new SyncScope(PartybaseDefDefenceSync.SCOPE_COX, 42),
-				resolver.forBoss(BossDefence.TEKTON, null));
-		assertEquals(new SyncScope(PartybaseDefDefenceSync.SCOPE_COX, 42),
-				resolver.currentRaidScopeForBoss(BossDefence.TEKTON));
+		assertEquals(new SyncScope(PartybaseDefenceSync.SCOPE_COX, 42),
+			resolver.forBoss(BossDefence.TEKTON, null));
+		assertEquals(new SyncScope(PartybaseDefenceSync.SCOPE_COX, 42),
+			resolver.currentRaidScopeForBoss(BossDefence.TEKTON));
 	}
 }

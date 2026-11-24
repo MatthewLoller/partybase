@@ -1,32 +1,39 @@
 package com.matthewloller.partybase.defence;
 
-import java.util.Arrays;
-import java.util.List;
-import org.junit.Test;
 import static org.junit.Assert.*;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
+import java.util.Arrays;
+import java.util.List;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
+import org.junit.Test;
 
-public class AuditRegressionTest {
-	private SpecHistoryEntry event(String id, String clock, long tick, SpecialWeapon weapon, int hit) {
+public class AuditRegressionTest
+{
+	private SpecHistoryEntry event(String id, String clock, long tick, SpecialWeapon weapon, int hit)
+	{
 		return new SpecHistoryEntry(id, weapon, hit, id, clock, tick);
 	}
 
-	private EncounterTimeline.Replay<Integer> corp() {
-		return new EncounterTimeline.Replay<Integer>() {
-			public Integer apply(Integer defence, SpecHistoryEntry event) {
+	private EncounterTimeline.Replay<Integer> corp()
+	{
+		return new EncounterTimeline.Replay<Integer>()
+		{
+			public Integer apply(Integer defence, SpecHistoryEntry event)
+			{
 				if (event.getWeapon() == SpecialWeapon.DRAGON_WARHAMMER)
 					return defence - defence * 30 / 100;
 				return Math.max(0, defence - event.getHit() * 2);
 			}
-			public Integer conservative(Integer a, Integer b) {
+			public Integer conservative(Integer a, Integer b)
+			{
 				return Math.max(a, b);
 			}
 		};
 	}
 
 	@Test
-	public void equivalentEffectsWithDifferentSuccessorsMustNotLoseLegalOrder() {
+	public void equivalentEffectsWithDifferentSuccessorsMustNotLoseLegalOrder()
+	{
 		List<SpecHistoryEntry> events = Arrays.asList(
 				event("a", "clock-a", 0, SpecialWeapon.DRAGON_WARHAMMER, 1),
 				event("c", "clock-a", 1, SpecialWeapon.BANDOS_GODSWORD, 20),
@@ -35,12 +42,13 @@ public class AuditRegressionTest {
 		Integer exhaustive = EncounterTimeline.replay(events, 310, corp());
 		assertEquals(Integer.valueOf(42), exhaustive);
 		Integer optimized = EncounterTimeline.replay(events, 310, corp(),
-				e -> e.getWeapon().name() + ":" + e.getHit());
+			e -> e.getWeapon().name() + ":" + e.getHit());
 		assertEquals("Optimization must preserve the highest Defence legal order", exhaustive, optimized);
 	}
 
 	@Test
-	public void smallBackwardCorrectionMustNotReverseAcceptedLocalChronology() {
+	public void smallBackwardCorrectionMustNotReverseAcceptedLocalChronology()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		clock.sample(RaidTimerClock.SOURCE_TOA, "i1", 100, false, 1000);
 		String domain = clock.domain();
@@ -48,11 +56,12 @@ public class AuditRegressionTest {
 		clock.sample(RaidTimerClock.SOURCE_TOA, "i1", 100, false, 1002);
 		SpecHistoryEntry later = event("dwh", clock.domain(), clock.tickAt(1002), SpecialWeapon.DRAGON_WARHAMMER, 1);
 		assertFalse("A later local observation cannot precede an already accepted event",
-				EncounterTimeline.before(later, earlier));
+			EncounterTimeline.before(later, earlier));
 	}
 
 	@Test
-	public void lateJoinInCurrentRoomMustShareDomainWithContinuingClient() {
+	public void lateJoinInCurrentRoomMustShareDomainWithContinuingClient()
+	{
 		RaidTimerClock continuing = new RaidTimerClock();
 		RaidTimerClock joining = new RaidTimerClock();
 		continuing.sample(RaidTimerClock.SOURCE_TOA, "i111", 100, false, 1000);
@@ -63,7 +72,8 @@ public class AuditRegressionTest {
 	}
 
 	@Test
-	public void coxOneTickSamplingUncertaintyMustNotForceSameTickAttacksIntoOrder() {
+	public void coxOneTickSamplingUncertaintyMustNotForceSameTickAttacksIntoOrder()
+	{
 		RaidTimerClock alice = new RaidTimerClock();
 		RaidTimerClock bob = new RaidTimerClock();
 		alice.sample(RaidTimerClock.SOURCE_COX, "i1", 100, false, 1000);
@@ -74,6 +84,6 @@ public class AuditRegressionTest {
 				event("dwh", alice.domain(), alice.tickAt(1000), SpecialWeapon.DRAGON_WARHAMMER, 1),
 				event("bgs", bob.domain(), bob.tickAt(5000), SpecialWeapon.BANDOS_GODSWORD, 20));
 		assertEquals("Unknown same-tick execution must retain the 189 conservative bound",
-				Integer.valueOf(189), EncounterTimeline.replay(simultaneous, 310, corp()));
+			Integer.valueOf(189), EncounterTimeline.replay(simultaneous, 310, corp()));
 	}
 }

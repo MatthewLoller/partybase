@@ -24,6 +24,31 @@
  */
 package com.matthewloller.partybase.ui;
 
+import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.data.GameItem;
+import com.matthewloller.partybase.data.PartyPlayer;
+import com.matthewloller.partybase.data.PrayerData;
+import com.matthewloller.partybase.ui.equipment.EquipmentPanelSlot;
+import com.matthewloller.partybase.ui.equipment.PlayerEquipmentPanel;
+import com.matthewloller.partybase.ui.prayer.PlayerPrayerPanel;
+import com.matthewloller.partybase.ui.prayer.PrayerSlot;
+import com.matthewloller.partybase.ui.skills.PlayerSkillsPanel;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.EquipmentInventorySlot;
@@ -39,32 +64,6 @@ import net.runelite.client.ui.components.materialtabs.MaterialTab;
 import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
-import com.matthewloller.partybase.PartybaseConfig;
-import com.matthewloller.partybase.data.GameItem;
-import com.matthewloller.partybase.data.PartyPlayer;
-import com.matthewloller.partybase.data.PrayerData;
-import com.matthewloller.partybase.ui.equipment.EquipmentPanelSlot;
-import com.matthewloller.partybase.ui.equipment.PlayerEquipmentPanel;
-import com.matthewloller.partybase.ui.prayer.PlayerPrayerPanel;
-import com.matthewloller.partybase.ui.prayer.PrayerSlot;
-import com.matthewloller.partybase.ui.skills.PlayerSkillsPanel;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.Map;
 
 @Getter
 public class PlayerPanel extends JPanel

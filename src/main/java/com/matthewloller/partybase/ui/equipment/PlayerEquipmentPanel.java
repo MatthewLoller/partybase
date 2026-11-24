@@ -25,6 +25,8 @@
 package com.matthewloller.partybase.ui.equipment;
 
 import com.google.common.collect.ImmutableMap;
+import com.matthewloller.partybase.data.GameItem;
+import com.matthewloller.partybase.data.Quiver;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -46,8 +48,6 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.ImageUtil;
-import com.matthewloller.partybase.data.GameItem;
-import com.matthewloller.partybase.data.Quiver;
 
 public class PlayerEquipmentPanel extends JPanel
 {

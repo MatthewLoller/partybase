@@ -25,6 +25,7 @@
  */
 package com.matthewloller.partybase.ui;
 
+import com.matthewloller.partybase.PartybasePlugin;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -35,7 +36,6 @@ import java.util.Locale;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import com.matthewloller.partybase.PartybasePlugin;
 
 // A copy of the controls from the `net.runelite.client.plugins.party.PartyPanel` class
 public class ControlsPanel extends JPanel

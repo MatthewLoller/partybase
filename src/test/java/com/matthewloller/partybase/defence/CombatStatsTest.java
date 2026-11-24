@@ -4,13 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
-
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Test;
 
-public class CombatStatsTest {
+public class CombatStatsTest
+{
 	@Test
-	public void challengeModeTektonUsesMagicDefensiveScaling() {
+	public void challengeModeTektonUsesMagicDefensiveScaling()
+	{
 		CombatStats stats = CombatStats.initial(BossDefence.TEKTON, 5, true, true);
 
 		assertEquals(287, stats.defence);
@@ -20,7 +21,8 @@ public class CombatStatsTest {
 	}
 
 	@Test
-	public void scalingOutsideCoxLeavesTheCatalogueBaselineUntouched() {
+	public void scalingOutsideCoxLeavesTheCatalogueBaselineUntouched()
+	{
 		CombatStats stats = CombatStats.initial(BossDefence.GREAT_OLM, 5, false, true);
 
 		assertEquals(BossDefence.GREAT_OLM.getBaseDef(), stats.defence);
@@ -28,7 +30,8 @@ public class CombatStatsTest {
 	}
 
 	@Test
-	public void copiesAreIndependentAndBaselineResetsOnlyCombatState() {
+	public void copiesAreIndependentAndBaselineResetsOnlyCombatState()
+	{
 		CombatStats stats = CombatStats.initial(BossDefence.CORPOREAL_BEAST, 1, false, false);
 		stats.drained = true;
 		stats.accursedApplied = true;
@@ -50,7 +53,8 @@ public class CombatStatsTest {
 	}
 
 	@Test
-	public void hammerAndMaulUseCurrentDefenceWithDistinctPercentages() {
+	public void hammerAndMaulUseCurrentDefenceWithDistinctPercentages()
+	{
 		CombatStats hammer = CombatStats.initial(BossDefence.CORPOREAL_BEAST, 1, false, false);
 		CombatStats maul = hammer.copy();
 		hammer.defence = 199;
@@ -62,7 +66,8 @@ public class CombatStatsTest {
 	}
 
 	@Test
-	public void ralosTruncatesEachGlaiveBeforeMultiplying() {
+	public void ralosTruncatesEachGlaiveBeforeMultiplying()
+	{
 		CombatStats stats = CombatStats.initial(BossDefence.CORPOREAL_BEAST, 1, false, false);
 		stats.magicLevel = 15;
 		stats.applyWeapon(SpecialWeapon.TONALZTICS_OF_RALOS, 2, null, "Corporeal Beast");
@@ -72,7 +77,8 @@ public class CombatStatsTest {
 	}
 
 	@Test
-	public void lightWeaponsUseBaseDefenceAndKeepTheirDemonBonuses() {
+	public void lightWeaponsUseBaseDefenceAndKeepTheirDemonBonuses()
+	{
 		CombatStats arclight = CombatStats.initial(BossDefence.ABYSSAL_SIRE, 1, false, false);
 		CombatStats emberlight = arclight.copy();
 		arclight.defence = 200;

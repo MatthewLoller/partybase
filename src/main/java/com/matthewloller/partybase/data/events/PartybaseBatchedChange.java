@@ -24,17 +24,16 @@
  */
 package com.matthewloller.partybase.data.events;
 
+import com.matthewloller.partybase.data.PartyPlayer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.runelite.api.Prayer;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.party.messages.PartyMemberMessage;
-import com.matthewloller.partybase.data.PartyPlayer;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 @Data
 @NoArgsConstructor

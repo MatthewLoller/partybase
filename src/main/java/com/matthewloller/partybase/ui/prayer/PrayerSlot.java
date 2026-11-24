@@ -24,19 +24,17 @@
  */
 package com.matthewloller.partybase.ui.prayer;
 
+import static com.matthewloller.partybase.data.Prayers.isUnlockedByDefault;
+import com.matthewloller.partybase.ImgUtil;
+import com.matthewloller.partybase.data.PrayerData;
+import java.awt.Dimension;
+import java.awt.image.BufferedImage;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import lombok.Getter;
 import net.runelite.api.SpriteID;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.util.Text;
-import com.matthewloller.partybase.ImgUtil;
-import com.matthewloller.partybase.data.PrayerData;
-
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
-
-import static com.matthewloller.partybase.data.Prayers.isUnlockedByDefault;
 
 public class PrayerSlot extends JLabel
 {

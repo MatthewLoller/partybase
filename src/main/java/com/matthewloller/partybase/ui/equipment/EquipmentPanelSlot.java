@@ -24,14 +24,14 @@
  */
 package com.matthewloller.partybase.ui.equipment;
 
+import com.matthewloller.partybase.ImgUtil;
+import com.matthewloller.partybase.data.GameItem;
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import lombok.Getter;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.QuantityFormatter;
-import com.matthewloller.partybase.ImgUtil;
-import com.matthewloller.partybase.data.GameItem;
 
 public class EquipmentPanelSlot extends JLabel
 {

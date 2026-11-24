@@ -62,7 +62,7 @@ final class TargetResolver
 			return null;
 		}
 		return uniqueCandidateAt(worldView, boss, npcId,
-			lastLocation.getX(), lastLocation.getY(), lastLocation.getPlane(), tolerance);
+				lastLocation.getX(), lastLocation.getY(), lastLocation.getPlane(), tolerance);
 	}
 
 	// A negative NPC id means the sender has only location evidence.

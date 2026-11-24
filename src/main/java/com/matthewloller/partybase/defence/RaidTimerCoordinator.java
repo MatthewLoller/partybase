@@ -83,7 +83,7 @@ final class RaidTimerCoordinator
 			return;
 		}
 		RaidTimerClock.TimerInput input = RaidTimerClock.parseTimerScript(
-			event.getScriptId(), scriptEvent.getArguments());
+				event.getScriptId(), scriptEvent.getArguments());
 		if (input == null)
 		{
 			return;

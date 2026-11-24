@@ -1,10 +1,10 @@
 package com.matthewloller.partybase.defence;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.Getter;
-import lombok.ToString;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import com.matthewloller.partybase.defence.DefenceTracker.SpellDrain;
+import lombok.Getter;
+import lombok.ToString;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.party.messages.PartyMemberMessage;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
@@ -12,7 +12,8 @@ import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 // One observed spec; the party message supplies the sender.
 @Getter
 @ToString(doNotUseGetters = true)
-public final class PartybaseDefSpecEvent extends PartyMemberMessage {
+public final class PartybaseDefenceSpecEvent extends PartyMemberMessage
+{
 	@SerializedName("w")
 	private int world;
 	@SerializedName("s")
@@ -47,12 +48,14 @@ public final class PartybaseDefSpecEvent extends PartyMemberMessage {
 	@SerializedName("h")
 	private int hit;
 
-	PartybaseDefSpecEvent() {
+	PartybaseDefenceSpecEvent()
+	{
 		// Gson.
 	}
 
-	PartybaseDefSpecEvent(int world, int scopeType, int scopeId, BossDefence boss, int npcIndex, int tile, int healthPercent,
-			SpecHistoryEntry entry, String previousId) {
+	PartybaseDefenceSpecEvent(int world, int scopeType, int scopeId, BossDefence boss, int npcIndex, int tile, int healthPercent,
+		SpecHistoryEntry entry, String previousId)
+	{
 		this.world = world;
 		this.scopeType = scopeType;
 		this.scopeId = scopeId == 0 ? null : scopeId;
@@ -71,37 +74,44 @@ public final class PartybaseDefSpecEvent extends PartyMemberMessage {
 		this.hit = entry.getHit();
 	}
 
-	int getScopeId() {
+	int getScopeId()
+	{
 		return scopeId == null ? 0 : scopeId;
 	}
 
-	int getHealthPercent() {
+	int getHealthPercent()
+	{
 		return healthPercent == null ? -1 : healthPercent;
 	}
 
-	BossDefence getBoss() {
+	BossDefence getBoss()
+	{
 		return boss == null ? null : boss.trackingType();
 	}
 
 	@ToString.Include
-	WorldPoint location() {
+	WorldPoint location()
+	{
 		return tile > 0 && tile >>> 30 == 0 ? WorldPoint.fromCoord(tile) : null;
 	}
 
-	SpecHistoryEntry historyEntry(String player) {
+	SpecHistoryEntry historyEntry(String player)
+	{
 		if (!validId(eventId) || anchor != null && !validId(anchor)
-				|| previousId != null && (!validId(previousId) || eventId.equals(previousId))
-				|| tick < 0 || hit < 0 || hit > 65535 || weapon == SpecialWeapon.TONALZTICS_OF_RALOS && hit > 2
-				|| healthPercent != null && (healthPercent < 0 || healthPercent > 100)) {
+			|| previousId != null && (!validId(previousId) || eventId.equals(previousId))
+			|| tick < 0 || hit < 0 || hit > 65535 || weapon == SpecialWeapon.TONALZTICS_OF_RALOS && hit > 2
+			|| healthPercent != null && (healthPercent < 0 || healthPercent > 100))
+		{
 			return null;
 		}
 		SpecHistoryEntry entry = new SpecHistoryEntry(player, weapon, spell, hit, eventId,
-				anchor == null ? eventId : anchor, tick,
-				observedAt != null && observedAt > 0 && observedAt <= sentAt ? observedAt : 0);
+			anchor == null ? eventId : anchor, tick,
+			observedAt != null && observedAt > 0 && observedAt <= sentAt ? observedAt : 0);
 		return entry.isSupported() ? entry : null;
 	}
 
-	private static boolean validId(String id) {
+	private static boolean validId(String id)
+	{
 		return id != null && !id.isEmpty() && id.length() <= 128;
 	}
 

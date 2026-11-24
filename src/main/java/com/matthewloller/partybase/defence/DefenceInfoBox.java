@@ -1,21 +1,21 @@
 package com.matthewloller.partybase.defence;
 
 import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
+import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import com.matthewloller.partybase.PartybaseConfig.DefenceInfoBoxValue;
-import com.matthewloller.partybase.PartybaseConfig.MagicDefenceDisplay;
-import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
-import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
 
 // Status-bar Defence readout with optional spec history.
-public class DefenceInfoBox extends InfoBox {
-	public enum Stat {
+public class DefenceInfoBox extends InfoBox
+{
+	public enum Stat
+	{
 		DEFENCE, MAGIC_DEFENCE
 	}
 
@@ -28,16 +28,18 @@ public class DefenceInfoBox extends InfoBox {
 	// Reuse the tracker's immutable history snapshot.
 	private List<SpecHistoryEntry> tooltipHistory;
 
-	public DefenceInfoBox(BufferedImage image, Plugin plugin, DefenceTracker tracker, PartybaseConfig config) {
+	public DefenceInfoBox(BufferedImage image, Plugin plugin, DefenceTracker tracker, PartybaseConfig config)
+	{
 		this(image, plugin, tracker, config, Stat.DEFENCE);
 	}
 
 	public DefenceInfoBox(
-			BufferedImage image,
-			Plugin plugin,
-			DefenceTracker tracker,
-			PartybaseConfig config,
-			Stat stat) {
+		BufferedImage image,
+		Plugin plugin,
+		DefenceTracker tracker,
+		PartybaseConfig config,
+		Stat stat)
+	{
 		super(image, plugin);
 		this.tracker = tracker;
 		this.config = config;
@@ -46,17 +48,21 @@ public class DefenceInfoBox extends InfoBox {
 	}
 
 	@Override
-	public String getText() {
+	public String getText()
+	{
 		DefenceState state = tracker.state();
-		if (state == null) {
+		if (state == null)
+		{
 			return "";
 		}
 		// Prevent a stale TFA Magic frame.
-		if (stat == Stat.MAGIC_DEFENCE && !DefenceReadout.magicDefenceVisible(state)) {
+		if (stat == Stat.MAGIC_DEFENCE && !DefenceReadout.magicDefenceVisible(state))
+		{
 			return "";
 		}
 		updateTooltip(state);
-		if (stat == Stat.MAGIC_DEFENCE) {
+		if (stat == Stat.MAGIC_DEFENCE)
+		{
 			return magicText(state);
 		}
 
@@ -67,9 +73,11 @@ public class DefenceInfoBox extends InfoBox {
 		return infoBoxValue(current, base);
 	}
 
-	private String magicText(DefenceState state) {
+	private String magicText(DefenceState state)
+	{
 		long rollPercent = DefenceReadout.percentRemaining(state.getMagicRoll(), state.getMagicBaseRoll());
-		switch (config.magicDefenceDisplay()) {
+		switch (config.magicDefenceDisplay())
+		{
 			case LEVEL :
 				return infoBoxValue(state.getMagicLevel(), state.getMagicBaseLevel());
 			case PERCENT :
@@ -82,8 +90,10 @@ public class DefenceInfoBox extends InfoBox {
 		}
 	}
 
-	private String infoBoxValue(long current, long base) {
-		switch (config.defenceInfoBoxValue()) {
+	private String infoBoxValue(long current, long base)
+	{
+		switch (config.defenceInfoBoxValue())
+		{
 			case PERCENT :
 				return DefenceReadout.percentRemaining(current, base) + "%";
 			case DRAINED :
@@ -95,9 +105,12 @@ public class DefenceInfoBox extends InfoBox {
 	}
 
 	// Tooltip contains accepted spec history only.
-	private void updateTooltip(DefenceState state) {
-		if (!config.extraInfoInInfoBox()) {
-			if (tooltipHistory != null) {
+	private void updateTooltip(DefenceState state)
+	{
+		if (!config.extraInfoInInfoBox())
+		{
+			if (tooltipHistory != null)
+			{
 				tooltipHistory = null;
 				setTooltip(DEFAULT_TOOLTIP);
 			}
@@ -105,46 +118,57 @@ public class DefenceInfoBox extends InfoBox {
 		}
 
 		List<SpecHistoryEntry> history = tracker.specHistoryForCurrentTarget(state.getNpcIndex());
-		if (history == tooltipHistory) {
+		if (history == tooltipHistory)
+		{
 			return;
 		}
 		tooltipHistory = history;
 		List<SpecHistoryEntry> relevant = relevantHistory(history);
-		if (relevant.isEmpty()) {
+		if (relevant.isEmpty())
+		{
 			setTooltip("No specs yet");
 			return;
 		}
 
 		StringBuilder tip = new StringBuilder("Spec history:");
-		for (SpecSummary summary : aggregateHistory(relevant)) {
+		for (SpecSummary summary : aggregateHistory(relevant))
+		{
 			tip.append("<br>");
-			if (summary.miss) {
+			if (summary.miss)
+			{
 				tip.append("<col=ff0000>");
 			}
 			tip.append(summary.playerName)
-					.append(": ")
-					.append(shortWeaponName(summary.weapon));
-			if (summary.miss) {
+			.append(": ")
+			.append(shortWeaponName(summary.weapon));
+			if (summary.miss)
+			{
 				tip.append(" miss: ")
-						.append(summary.value)
-						.append("</col>");
-			} else {
+				.append(summary.value)
+				.append("</col>");
+			}
+			else
+			{
 				tip.append(' ').append(summary.value);
 			}
 		}
 		setTooltip(tip.toString());
 	}
 
-	private List<SpecHistoryEntry> relevantHistory(List<SpecHistoryEntry> history) {
+	private List<SpecHistoryEntry> relevantHistory(List<SpecHistoryEntry> history)
+	{
 		List<SpecHistoryEntry> relevant = new ArrayList<>();
-		for (SpecHistoryEntry entry : history) {
-			if (entry == null) {
+		for (SpecHistoryEntry entry : history)
+		{
+			if (entry == null)
+			{
 				continue;
 			}
 			boolean include = stat == Stat.MAGIC_DEFENCE
-					? SpecialWeaponRules.drainsMagicDefence(entry.getWeapon())
-					: SpecialWeaponRules.drainsDefence(entry.getWeapon());
-			if (include) {
+				? SpecialWeaponRules.drainsMagicDefence(entry.getWeapon())
+				: SpecialWeaponRules.drainsDefence(entry.getWeapon());
+			if (include)
+			{
 				relevant.add(entry);
 			}
 		}
@@ -153,21 +177,27 @@ public class DefenceInfoBox extends InfoBox {
 
 	// Fixed-effect specs count uses; BGS counts damage.
 	// Keep misses separate and preserve first-seen order.
-	private static List<SpecSummary> aggregateHistory(List<SpecHistoryEntry> history) {
+	private static List<SpecSummary> aggregateHistory(List<SpecHistoryEntry> history)
+	{
 		List<SpecSummary> summaries = new ArrayList<>();
-		for (SpecHistoryEntry entry : history) {
-			if (entry == null) {
+		for (SpecHistoryEntry entry : history)
+		{
+			if (entry == null)
+			{
 				continue;
 			}
 			SpecialWeapon weapon = entry.getWeapon();
 			String player = entry.getPlayerName();
-			if (player == null || player.trim().isEmpty()) {
+			if (player == null || player.trim().isEmpty())
+			{
 				player = "Unknown";
 			}
 			boolean miss = entry.getHit() <= 0;
 			SpecSummary existing = null;
-			for (SpecSummary summary : summaries) {
-				if (summary.weapon == weapon && summary.miss == miss && summary.playerName.equals(player)) {
+			for (SpecSummary summary : summaries)
+			{
+				if (summary.weapon == weapon && summary.miss == miss && summary.playerName.equals(player))
+				{
 					existing = summary;
 					break;
 				}
@@ -175,22 +205,27 @@ public class DefenceInfoBox extends InfoBox {
 
 			// Misses count once and never inflate hit totals.
 			int amount = miss ? 1 : SpecialWeaponRules.reportedValue(weapon, entry.getHit());
-			if (existing == null) {
+			if (existing == null)
+			{
 				summaries.add(new SpecSummary(player, weapon, amount, miss));
-			} else {
+			}
+			else
+			{
 				existing.value += amount;
 			}
 		}
 		return summaries;
 	}
 
-	private static final class SpecSummary {
+	private static final class SpecSummary
+	{
 		private final String playerName;
 		private final SpecialWeapon weapon;
 		private final boolean miss;
 		private int value;
 
-		private SpecSummary(String playerName, SpecialWeapon weapon, int value, boolean miss) {
+		private SpecSummary(String playerName, SpecialWeapon weapon, int value, boolean miss)
+		{
 			this.playerName = playerName;
 			this.weapon = weapon;
 			this.value = value;
@@ -198,13 +233,16 @@ public class DefenceInfoBox extends InfoBox {
 		}
 	}
 
-	private static String shortWeaponName(SpecialWeapon weapon) {
+	private static String shortWeaponName(SpecialWeapon weapon)
+	{
 		return SpecialWeaponRules.shortName(weapon);
 	}
 
 	@Override
-	public Color getTextColor() {
-		if (stat == Stat.MAGIC_DEFENCE) {
+	public Color getTextColor()
+	{
+		if (stat == Stat.MAGIC_DEFENCE)
+		{
 			return config.magicDefenceColor();
 		}
 		DefenceState state = tracker.state();

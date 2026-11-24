@@ -8,16 +8,15 @@ package com.matthewloller.partybase;
 
 import com.matthewloller.partybase.dps.model.MeterMode;
 import java.awt.Color;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 import net.runelite.client.config.Units;
-
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import net.runelite.client.config.Alpha;
 
 @ConfigGroup(PartybaseConfig.GROUP)
 public interface PartybaseConfig extends Config

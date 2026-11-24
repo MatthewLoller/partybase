@@ -1,34 +1,41 @@
 package com.matthewloller.partybase.defence;
 
-import java.util.Arrays;
-import org.junit.Test;
 import static org.junit.Assert.*;
 import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
+import java.util.Arrays;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
+import org.junit.Test;
 
-public class AuditScopeReturnRegressionTest {
-	private SpecHistoryEntry event(String id, RaidTimerClock clock, int tick, SpecialWeapon weapon, int hit) {
+public class AuditScopeReturnRegressionTest
+{
+	private SpecHistoryEntry event(String id, RaidTimerClock clock, int tick, SpecialWeapon weapon, int hit)
+	{
 		return new SpecHistoryEntry(id, weapon, hit, id, clock.domain(), clock.tickAt(tick));
 	}
 
-	private void assertConservative(SpecHistoryEntry earlier, SpecHistoryEntry later) {
+	private void assertConservative(SpecHistoryEntry earlier, SpecHistoryEntry later)
+	{
 		Integer result = EncounterTimeline.replay(Arrays.asList(earlier, later), 310,
-				new EncounterTimeline.Replay<Integer>() {
-					public Integer apply(Integer defence, SpecHistoryEntry e) {
-						return e.getWeapon() == SpecialWeapon.DRAGON_WARHAMMER
-								? defence - defence * 30 / 100
-								: Math.max(0, defence - e.getHit() * 2);
-					}
-					public Integer conservative(Integer a, Integer b) {
-						return Math.max(a, b);
-					}
-				});
+			new EncounterTimeline.Replay<Integer>()
+			{
+				public Integer apply(Integer defence, SpecHistoryEntry e)
+				{
+					return e.getWeapon() == SpecialWeapon.DRAGON_WARHAMMER
+						? defence - defence * 30 / 100
+						: Math.max(0, defence - e.getHit() * 2);
+				}
+				public Integer conservative(Integer a, Integer b)
+				{
+					return Math.max(a, b);
+				}
+			});
 		assertEquals("A room change cannot certify compatibility with pre-correction timestamps",
-				Integer.valueOf(189), result);
+			Integer.valueOf(189), result);
 	}
 
 	@Test
-	public void returningToPreviousRoomMustNotRestorePreCorrectionDomain() {
+	public void returningToPreviousRoomMustNotRestorePreCorrectionDomain()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		clock.sample(RaidTimerClock.SOURCE_TOA, "i111", 500, false, 1000);
 		SpecHistoryEntry earlier = event("bgs", clock, 1001, SpecialWeapon.BANDOS_GODSWORD, 20);
@@ -41,7 +48,8 @@ public class AuditScopeReturnRegressionTest {
 	}
 
 	@Test
-	public void scopeChangeWhileInactiveMustNotRestoreOldDomainOnReturn() {
+	public void scopeChangeWhileInactiveMustNotRestoreOldDomainOnReturn()
+	{
 		RaidTimerClock clock = new RaidTimerClock();
 		clock.sample(RaidTimerClock.SOURCE_TOA, "i111", 500, false, 1000);
 		SpecHistoryEntry earlier = event("bgs", clock, 1001, SpecialWeapon.BANDOS_GODSWORD, 20);

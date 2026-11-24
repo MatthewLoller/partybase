@@ -26,6 +26,9 @@ package com.matthewloller.partybase;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import com.matthewloller.partybase.data.PartyPlayer;
+import com.matthewloller.partybase.ui.ControlsPanel;
+import com.matthewloller.partybase.ui.PlayerPanel;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -53,11 +56,8 @@ import javax.swing.border.EmptyBorder;
 import lombok.Getter;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
-import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.FontManager;
-import com.matthewloller.partybase.data.PartyPlayer;
-import com.matthewloller.partybase.ui.ControlsPanel;
-import com.matthewloller.partybase.ui.PlayerPanel;
+import net.runelite.client.ui.PluginPanel;
 
 class PartybasePanel extends PluginPanel
 {

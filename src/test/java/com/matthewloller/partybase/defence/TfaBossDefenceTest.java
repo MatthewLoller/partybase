@@ -1,18 +1,19 @@
 package com.matthewloller.partybase.defence;
 
 import static org.junit.Assert.*;
-
+import static org.mockito.Mockito.*;
+import com.matthewloller.partybase.defence.boss.BossLifecycle;
 import java.util.HashSet;
 import java.util.Set;
-import com.matthewloller.partybase.defence.boss.BossLifecycle;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
 
 /** Current Jagex 21 October TFA caps, distinct same-name actors, and phase transitions. */
-public class TfaBossDefenceTest {
-	private static NPC npc(String name, int id, int combat) {
+public class TfaBossDefenceTest
+{
+	private static NPC npc(String name, int id, int combat)
+	{
 		NPC n = mock(NPC.class);
 		when(n.getName()).thenReturn(name);
 		when(n.getId()).thenReturn(id);
@@ -21,23 +22,26 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void defenceFloorsMatchJagexOctober21Hotfix() {
-		Object[][] cases = {
-				{BossDefence.TFA_ARCHIVE_GUARDIAN, 260, 156},
-				{BossDefence.TFA_EZEKIEL, 130, 78},
-				{BossDefence.TFA_BORK, 300, 180},
-				{BossDefence.TFA_SMORKS, 220, 0},
-				{BossDefence.TFA_MOIA, 195, 117},
-				{BossDefence.TFA_DREADNOTH, 125, 0},
-				{BossDefence.TFA_XARTH, 170, 102},
-				{BossDefence.TFA_DAGONHAI_ELDER, 100, 0},
-				{BossDefence.TFA_DAGONHAI_MONK_16645, 100, 0},
-				{BossDefence.TFA_DAGONHAI_MONK_16646, 100, 0},
-				{BossDefence.TFA_OCELLUS_P1, 215, 129},
-				{BossDefence.TFA_OCELLUS_P2, 250, 0},
-				{BossDefence.TFA_OCELLUS_P3, 250, 150}
+	public void defenceFloorsMatchJagexOctober21Hotfix()
+	{
+		Object[][] cases =
+		{
+			{BossDefence.TFA_ARCHIVE_GUARDIAN, 260, 156},
+			{BossDefence.TFA_EZEKIEL, 130, 78},
+			{BossDefence.TFA_BORK, 300, 180},
+			{BossDefence.TFA_SMORKS, 220, 0},
+			{BossDefence.TFA_MOIA, 195, 117},
+			{BossDefence.TFA_DREADNOTH, 125, 0},
+			{BossDefence.TFA_XARTH, 170, 102},
+			{BossDefence.TFA_DAGONHAI_ELDER, 100, 0},
+			{BossDefence.TFA_DAGONHAI_MONK_16645, 100, 0},
+			{BossDefence.TFA_DAGONHAI_MONK_16646, 100, 0},
+			{BossDefence.TFA_OCELLUS_P1, 215, 129},
+			{BossDefence.TFA_OCELLUS_P2, 250, 0},
+			{BossDefence.TFA_OCELLUS_P3, 250, 150}
 		};
-		for (Object[] entry : cases) {
+		for (Object[] entry : cases)
+		{
 			BossDefence boss = (BossDefence) entry[0];
 			int base = (Integer) entry[1];
 			int floor = (Integer) entry[2];
@@ -49,7 +53,8 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void allDagonhaiTrioActorsAreIndependent() {
+	public void allDagonhaiTrioActorsAreIndependent()
+	{
 		BossDefence elder = BossDefence.matchingNpc(npc("Dagon'hai Elder", 16643, 427));
 		BossDefence monkA = BossDefence.matchingNpc(npc("Dagon'hai Monk", 16645, 427));
 		BossDefence monkB = BossDefence.matchingNpc(npc("Dagon'hai Monk", 16646, 427));
@@ -63,19 +68,20 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void ocellusPhaseOneThreeAndIdleActorAreDistinct() {
+	public void ocellusPhaseOneThreeAndIdleActorAreDistinct()
+	{
 		assertNull(BossDefence.matchingNpc(npc("Ocellus", 16672, 0)));
 		assertEquals(BossDefence.TFA_OCELLUS_P1,
-				BossDefence.matchingNpc(npc("Ocellus", 16673, 1121)));
+			BossDefence.matchingNpc(npc("Ocellus", 16673, 1121)));
 		assertEquals(BossDefence.TFA_OCELLUS_P1,
-				BossDefence.matchingNpc(npc("Ocellus", 16674, 1121)));
+			BossDefence.matchingNpc(npc("Ocellus", 16674, 1121)));
 		assertEquals(BossDefence.TFA_OCELLUS_P3,
-				BossDefence.matchingNpc(npc("Ocellus", 16677, 1197)));
+			BossDefence.matchingNpc(npc("Ocellus", 16677, 1197)));
 		assertEquals(BossDefence.TFA_OCELLUS_P3,
-				BossDefence.matchingNpc(npc("Ocellus", 16677, 1601)));
+			BossDefence.matchingNpc(npc("Ocellus", 16677, 1601)));
 		assertNull(BossDefence.matchingNpc(npc("Ocellus", 16675, 0)));
 		assertEquals(BossDefence.TFA_OCELLUS_P2,
-				BossDefence.matchingNpc(npc("Ocellus", 16676, 1200))); // exact NPC ID
+			BossDefence.matchingNpc(npc("Ocellus", 16676, 1200))); // exact NPC ID
 		assertNull(BossDefence.matchingNpc(npc("The Blade", 16683, 0)));
 		assertNull(BossDefence.matchingNpc(npc("The Blade", 62706, 0)));
 		assertNull(BossDefence.matchingNpc(npc("The Blade", 16684, 0)));
@@ -83,7 +89,8 @@ public class TfaBossDefenceTest {
 		assertNull(BossDefence.matchingNpcName("Ocellus"));
 	}
 
-	private static NPC actorWithActions(int id, String... actions) {
+	private static NPC actorWithActions(int id, String... actions)
+	{
 		NPC n = npc("Ocellus", id, 1200);
 		NPCComposition comp = mock(NPCComposition.class);
 		when(comp.getActions()).thenReturn(actions);
@@ -92,7 +99,8 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void ocellusPhaseTwoTracksOnlyConfirmed16676CombatTarget() {
+	public void ocellusPhaseTwoTracksOnlyConfirmed16676CombatTarget()
+	{
 		NPC attackable = actorWithActions(16676, null, "Attack", "Examine");
 		when(attackable.getHealthRatio()).thenReturn(0); // no visible health bar yet
 		assertTrue(BossDefence.isAttackableOcellusPhaseTwo(attackable));
@@ -114,10 +122,11 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void ocellusPhaseTwoIdentificationDoesNotDependOnCompositionActions() {
+	public void ocellusPhaseTwoIdentificationDoesNotDependOnCompositionActions()
+	{
 		NPC n = npc("Ocellus", 16676, 1200);
 		NPCComposition transformed = mock(NPCComposition.class);
-		when(transformed.getActions()).thenReturn(new String[]{"Examine"});
+		when(transformed.getActions()).thenReturn(new String[] {"Examine"});
 		when(n.getTransformedComposition()).thenReturn(transformed);
 		assertEquals(BossDefence.TFA_OCELLUS_P2, BossDefence.matchingNpc(n));
 
@@ -126,17 +135,19 @@ public class TfaBossDefenceTest {
 	}
 
 	@Test
-	public void quadrantTransitionsCannotResetOcellusPhaseThree() {
+	public void quadrantTransitionsCannotResetOcellusPhaseThree()
+	{
 		BossLifecycle m = BossLifecycle.forBoss(BossDefence.TFA_OCELLUS_P3);
 		assertTrue(m.isPhasePersistent());
 		assertTrue(m.preserveStateAtZeroHp(16677));
 		assertFalse(m.resetsStatsOnActorEntry(16677));
 		assertFalse(m.endsEncounterOnActorEntry(16677));
 		assertFalse(BossLifecycle.forBoss(BossDefence.TFA_OCELLUS_P1)
-				.resetsStatsOnActorEntry(16674));
+			.resetsStatsOnActorEntry(16674));
 	}
 	@Test
-	public void ocellusP2MatchesVerifiedActorIdRegardlessOfName() {
+	public void ocellusP2MatchesVerifiedActorIdRegardlessOfName()
+	{
 		NPC sword = npc("The Blade", 16676, 1200);
 		when(sword.getHealthRatio()).thenReturn(0);
 		assertEquals(BossDefence.TFA_OCELLUS_P2, BossDefence.matchingNpc(sword));
@@ -153,14 +164,15 @@ public class TfaBossDefenceTest {
 		assertNull(BossDefence.matchingNpc(npc("Ocellus", 16675, 1200)));
 		assertNull(BossDefence.matchingNpc(npc("The Blade", 16683, 0)));
 		assertEquals(BossDefence.TFA_OCELLUS_P1,
-				BossDefence.matchingNpc(npc("Ocellus", 16673, 1121)));
+			BossDefence.matchingNpc(npc("Ocellus", 16673, 1121)));
 		assertEquals(BossDefence.TFA_OCELLUS_P3,
-				BossDefence.matchingNpc(npc("Ocellus", 16677, 1601)));
+			BossDefence.matchingNpc(npc("Ocellus", 16677, 1601)));
 	}
 
 
 	@Test
-	public void ocellusTransitionMarkersDoNotOwnDefenceState() {
+	public void ocellusTransitionMarkersDoNotOwnDefenceState()
+	{
 		NPC transition = npc("<col=ff0000>Ocellus</col>", 16675, 1601);
 		NPC prop = npc("The Blade", 16683, 0);
 		NPC missingName = npc(null, 16676, 0);

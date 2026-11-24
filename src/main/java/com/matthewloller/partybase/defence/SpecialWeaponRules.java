@@ -8,61 +8,73 @@ import java.util.Set;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 
 // Shared policy for the special attacks that Better Party Defence accepts.
-final class SpecialWeaponRules {
+final class SpecialWeaponRules
+{
 	private static final Set<SpecialWeapon> SUPPORTED = Collections.unmodifiableSet(EnumSet.of(
-			SpecialWeapon.DRAGON_WARHAMMER,
-			SpecialWeapon.ELDER_MAUL,
-			SpecialWeapon.BANDOS_GODSWORD,
-			SpecialWeapon.ARCLIGHT,
-			SpecialWeapon.DARKLIGHT,
-			SpecialWeapon.EMBERLIGHT,
-			SpecialWeapon.BARRELCHEST_ANCHOR,
-			SpecialWeapon.BONE_DAGGER,
-			SpecialWeapon.DORGESHUUN_CROSSBOW,
-			SpecialWeapon.ACCURSED_SCEPTRE,
-			SpecialWeapon.TONALZTICS_OF_RALOS,
-			SpecialWeapon.SEERCULL,
-			SpecialWeapon.EYE_OF_AYAK));
+		SpecialWeapon.DRAGON_WARHAMMER,
+		SpecialWeapon.ELDER_MAUL,
+		SpecialWeapon.BANDOS_GODSWORD,
+		SpecialWeapon.ARCLIGHT,
+		SpecialWeapon.DARKLIGHT,
+		SpecialWeapon.EMBERLIGHT,
+		SpecialWeapon.BARRELCHEST_ANCHOR,
+		SpecialWeapon.BONE_DAGGER,
+		SpecialWeapon.DORGESHUUN_CROSSBOW,
+		SpecialWeapon.ACCURSED_SCEPTRE,
+		SpecialWeapon.TONALZTICS_OF_RALOS,
+		SpecialWeapon.SEERCULL,
+		SpecialWeapon.EYE_OF_AYAK));
 
 	private static final Map<Integer, SpecialWeapon> WEAPONS_BY_ITEM = buildWeaponIndex();
 
-	private SpecialWeaponRules() {
+	private SpecialWeaponRules()
+	{
 	}
 
-	static boolean isSupported(SpecialWeapon weapon) {
+	static boolean isSupported(SpecialWeapon weapon)
+	{
 		return weapon != null && SUPPORTED.contains(weapon);
 	}
 
-	static boolean drainsDefence(SpecialWeapon weapon) {
-		if (!isSupported(weapon)) {
+	static boolean drainsDefence(SpecialWeapon weapon)
+	{
+		if (!isSupported(weapon))
+		{
 			return false;
 		}
 		return weapon != SpecialWeapon.SEERCULL && weapon != SpecialWeapon.EYE_OF_AYAK;
 	}
 
-	static boolean drainsMagicDefence(SpecialWeapon weapon) {
+	static boolean drainsMagicDefence(SpecialWeapon weapon)
+	{
 		return weapon == SpecialWeapon.ACCURSED_SCEPTRE
-				|| weapon == SpecialWeapon.SEERCULL
-				|| weapon == SpecialWeapon.EYE_OF_AYAK;
+			|| weapon == SpecialWeapon.SEERCULL
+			|| weapon == SpecialWeapon.EYE_OF_AYAK;
 	}
 
-	static SpecialWeapon byItemId(int itemId) {
+	static SpecialWeapon byItemId(int itemId)
+	{
 		return WEAPONS_BY_ITEM.get(itemId);
 	}
 
-	static int correlationHit(SpecialWeapon weapon, int hit) {
+	static int correlationHit(SpecialWeapon weapon, int hit)
+	{
 		return weapon == SpecialWeapon.TONALZTICS_OF_RALOS ? 0 : hit;
 	}
 
-	static int reportedValue(SpecialWeapon weapon, int hit) {
+	static int reportedValue(SpecialWeapon weapon, int hit)
+	{
 		return weapon != null && weapon.isDamage() ? Math.max(0, hit) : 1;
 	}
 
-	static String shortName(SpecialWeapon weapon) {
-		if (weapon == null) {
+	static String shortName(SpecialWeapon weapon)
+	{
+		if (weapon == null)
+		{
 			return "Spec";
 		}
-		switch (weapon) {
+		switch (weapon)
+		{
 			case DRAGON_WARHAMMER:
 				return "DWH";
 			case BANDOS_GODSWORD:
@@ -88,13 +100,17 @@ final class SpecialWeaponRules {
 		}
 	}
 
-	private static Map<Integer, SpecialWeapon> buildWeaponIndex() {
+	private static Map<Integer, SpecialWeapon> buildWeaponIndex()
+	{
 		Map<Integer, SpecialWeapon> weapons = new HashMap<>();
-		for (SpecialWeapon weapon : SpecialWeapon.values()) {
-			if (!isSupported(weapon)) {
+		for (SpecialWeapon weapon : SpecialWeapon.values())
+		{
+			if (!isSupported(weapon))
+			{
 				continue;
 			}
-			for (int itemId : weapon.getItemID()) {
+			for (int itemId : weapon.getItemID())
+			{
 				weapons.putIfAbsent(itemId, weapon);
 			}
 		}

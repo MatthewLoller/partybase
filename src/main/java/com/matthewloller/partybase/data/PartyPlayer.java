@@ -24,6 +24,8 @@
  */
 package com.matthewloller.partybase.data;
 
+import com.matthewloller.partybase.PartybasePlugin;
+import java.util.Objects;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.runelite.api.Client;
@@ -34,9 +36,6 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.party.PartyMember;
-import com.matthewloller.partybase.PartybasePlugin;
-
-import java.util.Objects;
 
 @Data
 @EqualsAndHashCode

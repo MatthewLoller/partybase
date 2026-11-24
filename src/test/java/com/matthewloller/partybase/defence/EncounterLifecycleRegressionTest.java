@@ -1,13 +1,15 @@
 package com.matthewloller.partybase.defence;
 
-import com.matthewloller.partybase.PartybaseConfig;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
+import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
+import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
+import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -15,9 +17,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Set;
-import com.matthewloller.partybase.defence.DefenceTracker.DefenceState;
-import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
-import com.matthewloller.partybase.defence.DefenceTracker.SyncState;
 import net.runelite.api.Client;
 import net.runelite.api.IndexedObjectSet;
 import net.runelite.api.NPC;
@@ -28,7 +27,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 /** Characterizes complete per-boss cleanup at authoritative lifecycle boundaries. */
-public class EncounterLifecycleRegressionTest {
+public class EncounterLifecycleRegressionTest
+{
 	private static final int WORLD = 301;
 	private static final int NPC_INDEX = 81;
 
@@ -39,7 +39,8 @@ public class EncounterLifecycleRegressionTest {
 
 	@Before
 	@SuppressWarnings("unchecked")
-	public void setUp() throws Exception {
+	public void setUp() throws Exception
+	{
 		client = mock(Client.class);
 		WorldView worldView = mock(WorldView.class);
 		IndexedObjectSet<? extends NPC> npcs = mock(IndexedObjectSet.class);
@@ -70,23 +71,24 @@ public class EncounterLifecycleRegressionTest {
 	}
 
 	@Test
-	public void raidScopeEndClearsAllBossScopedReconciliationMetadata() throws Exception {
+	public void raidScopeEndClearsAllBossScopedReconciliationMetadata() throws Exception
+	{
 		Map<BossDefence, Object> versions = privateMap("syncStateVersions");
 		Constructor<?> versionConstructor = Class.forName(
 				"com.matthewloller.partybase.defence.DefenceModule$VersionedSyncState")
-				.getDeclaredConstructor(long.class, int.class);
+			.getDeclaredConstructor(long.class, int.class);
 		versionConstructor.setAccessible(true);
 		versions.put(BossDefence.TEKTON, versionConstructor.newInstance(99L, 123));
 
 		Constructor<?> scopeConstructor = Class.forName(
 				"com.matthewloller.partybase.defence.SyncScope")
-				.getDeclaredConstructor(int.class, int.class);
+			.getDeclaredConstructor(int.class, int.class);
 		scopeConstructor.setAccessible(true);
 		privateMap("retainedRaidScopes").put(BossDefence.TEKTON,
-				scopeConstructor.newInstance(PartybaseDefDefenceSync.SCOPE_COX, 77));
+			scopeConstructor.newInstance(PartybaseDefenceSync.SCOPE_COX, 77));
 		Set<?> visibleBosses = markTektonVisible();
-		PartybaseDefDefenceSync queuedSnapshot = new PartybaseDefDefenceSync(
-				WORLD, tektonState(), PartybaseDefDefenceSync.SCOPE_COX, 77, 0, 0, 0, 100, 99);
+		PartybaseDefenceSync queuedSnapshot = new PartybaseDefenceSync(
+			WORLD, tektonState(), PartybaseDefenceSync.SCOPE_COX, 77, 0, 0, 0, 100, 99);
 		privateDeque("pendingSnapshots").addLast(queuedSnapshot);
 		Method reconcile = DefenceModule.class.getDeclaredMethod(
 				"reconcileRaidEncounterLifecycle");
@@ -96,25 +98,26 @@ public class EncounterLifecycleRegressionTest {
 		assertFalse(tracker.hasRememberedState(BossDefence.TEKTON));
 		assertTrue("logical versions belong to the ended encounter", versions.isEmpty());
 		assertTrue("retained raid scopes belong to the ended encounter",
-				privateMap("retainedRaidScopes").isEmpty());
+			privateMap("retainedRaidScopes").isEmpty());
 		assertTrue("visibility belongs to the ended encounter", visibleBosses.isEmpty());
 		assertTrue("queued snapshots from the ended encounter must be discarded",
-				privateDeque("pendingSnapshots").isEmpty());
+			privateDeque("pendingSnapshots").isEmpty());
 	}
 
 	@Test
-	public void raidScopeEndClearsOnlyThatBossesInitialDisplayGate() throws Exception {
+	public void raidScopeEndClearsOnlyThatBossesInitialDisplayGate() throws Exception
+	{
 		DefenceState endedState = new DefenceState(NPC_INDEX, "Tekton", 205, 0, 205,
-				0, 0, 0, 0, 0, 0, false, false);
+			0, 0, 0, 0, 0, 0, false, false);
 		displayGate.arm(NPC_INDEX, BossDefence.TEKTON, client.getTickCount(), 4);
 		displayGate.arm(82, BossDefence.VORKATH, client.getTickCount(), 4);
 
 		Constructor<?> scopeConstructor = Class.forName(
 				"com.matthewloller.partybase.defence.SyncScope")
-				.getDeclaredConstructor(int.class, int.class);
+			.getDeclaredConstructor(int.class, int.class);
 		scopeConstructor.setAccessible(true);
 		privateMap("retainedRaidScopes").put(BossDefence.TEKTON,
-				scopeConstructor.newInstance(PartybaseDefDefenceSync.SCOPE_COX, 77));
+			scopeConstructor.newInstance(PartybaseDefenceSync.SCOPE_COX, 77));
 
 		Method reconcile = DefenceModule.class.getDeclaredMethod(
 				"reconcileRaidEncounterLifecycle");
@@ -122,40 +125,45 @@ public class EncounterLifecycleRegressionTest {
 		reconcile.invoke(plugin);
 
 		assertFalse("the ended encounter must not retain a presentation grace gate",
-				displayGate.isWaiting(endedState, client.getTickCount()));
+			displayGate.isWaiting(endedState, client.getTickCount()));
 		assertTrue("an unrelated boss gate must remain untouched",
-				displayGate.isWaiting(new DefenceState(82, "Vorkath", 100, 0, 100,
-						0, 0, 0, 0, 0, 0, false, false), client.getTickCount()));
+			displayGate.isWaiting(new DefenceState(82, "Vorkath", 100, 0, 100,
+			0, 0, 0, 0, 0, 0, false, false), client.getTickCount()));
 	}
 
-	private SyncState tektonState() {
+	private SyncState tektonState()
+	{
 		SpecHistoryEntry event = new SpecHistoryEntry(
-				"Alice", SpecialWeapon.DRAGON_WARHAMMER, 1);
+			"Alice", SpecialWeapon.DRAGON_WARHAMMER, 1);
 		return new SyncState("Tekton", BossDefence.TEKTON, 139, 0, 205,
 				390, 390, 205, 205, 0, 0, true, false, false, true,
 				Collections.singletonList(event));
 	}
 
-	private Field pluginField(String name) throws Exception {
+	private Field pluginField(String name) throws Exception
+	{
 		Field field = DefenceModule.class.getDeclaredField(name);
 		field.setAccessible(true);
 		return field;
 	}
 
 	@SuppressWarnings("unchecked")
-	private Set<BossDefence> markTektonVisible() throws Exception {
+	private Set<BossDefence> markTektonVisible() throws Exception
+	{
 		Set<BossDefence> visibleBosses = (Set<BossDefence>) pluginField("visibleTrackedBosses").get(plugin);
 		visibleBosses.add(BossDefence.TEKTON);
 		return visibleBosses;
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<BossDefence, Object> privateMap(String name) throws Exception {
+	private Map<BossDefence, Object> privateMap(String name) throws Exception
+	{
 		return (Map<BossDefence, Object>) pluginField(name).get(plugin);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Deque<PartybaseDefDefenceSync> privateDeque(String name) throws Exception {
-		return (Deque<PartybaseDefDefenceSync>) pluginField(name).get(plugin);
+	private Deque<PartybaseDefenceSync> privateDeque(String name) throws Exception
+	{
+		return (Deque<PartybaseDefenceSync>) pluginField(name).get(plugin);
 	}
 }

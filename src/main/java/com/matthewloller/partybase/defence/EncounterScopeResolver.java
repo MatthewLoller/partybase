@@ -9,97 +9,119 @@ import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.party.PartyService;
 
 // Resolves the transport scope for the current world or raid encounter.
-final class EncounterScopeResolver {
+final class EncounterScopeResolver
+{
 	private final Client client;
 	private final PartyService partyService;
 
-	EncounterScopeResolver(Client client, PartyService partyService) {
+	EncounterScopeResolver(Client client, PartyService partyService)
+	{
 		this.client = client;
 		this.partyService = partyService;
 	}
 
-	SyncScope current() {
-		int coxController = raidController(PartybaseDefDefenceSync.SCOPE_COX);
-		if (coxController > 0) {
-			return new SyncScope(PartybaseDefDefenceSync.SCOPE_COX, coxController);
+	SyncScope current()
+	{
+		int coxController = raidController(PartybaseDefenceSync.SCOPE_COX);
+		if (coxController > 0)
+		{
+			return new SyncScope(PartybaseDefenceSync.SCOPE_COX, coxController);
 		}
 
-		int tobController = raidController(PartybaseDefDefenceSync.SCOPE_TOB);
-		if (tobController > 0) {
-			return new SyncScope(PartybaseDefDefenceSync.SCOPE_TOB, tobController);
+		int tobController = raidController(PartybaseDefenceSync.SCOPE_TOB);
+		if (tobController > 0)
+		{
+			return new SyncScope(PartybaseDefenceSync.SCOPE_TOB, tobController);
 		}
 
 		WorldView worldView = client.getTopLevelWorldView();
-		if (worldView == null) {
+		if (worldView == null)
+		{
 			return null;
 		}
-		if (worldView.isInstance()) {
+		if (worldView.isInstance())
+		{
 			return instanceScope(worldView);
 		}
-		return new SyncScope(PartybaseDefDefenceSync.SCOPE_WORLD, 0);
+		return new SyncScope(PartybaseDefenceSync.SCOPE_WORLD, 0);
 	}
 
-	SyncScope forBoss(BossDefence boss, NPC npc) {
+	SyncScope forBoss(BossDefence boss, NPC npc)
+	{
 		int raidScope = EncounterScopes.raidScopeType(boss);
-		if (raidScope != -1) {
+		if (raidScope != -1)
+		{
 			int controller = raidController(raidScope);
-			if (controller > 0) {
+			if (controller > 0)
+			{
 				return new SyncScope(raidScope, controller);
 			}
 
 			// CoX can clear its public controller after starting.
 			// Use the live instance only to match party packets.
 			WorldView raidWorldView = client.getTopLevelWorldView();
-			if (raidWorldView != null && raidWorldView.isInstance()) {
+			if (raidWorldView != null && raidWorldView.isInstance())
+			{
 				return instanceScope(raidWorldView);
 			}
 			return null;
 		}
 
 		WorldView worldView = client.getTopLevelWorldView();
-		if (worldView == null) {
+		if (worldView == null)
+		{
 			return null;
 		}
-		if (worldView.isInstance()) {
+		if (worldView.isInstance())
+		{
 			return instanceScope(worldView);
 		}
-		return npc == null ? null : new SyncScope(PartybaseDefDefenceSync.SCOPE_WORLD, 0);
+		return npc == null ? null : new SyncScope(PartybaseDefenceSync.SCOPE_WORLD, 0);
 	}
 
-	SyncScope currentRaidScopeForBoss(BossDefence boss) {
+	SyncScope currentRaidScopeForBoss(BossDefence boss)
+	{
 		int raidScope = EncounterScopes.raidScopeType(boss);
-		if (raidScope != -1) {
+		if (raidScope != -1)
+		{
 			int controller = raidController(raidScope);
 			return controller > 0 ? new SyncScope(raidScope, controller) : null;
 		}
 
-		if (!EncounterScopes.isToaBoss(boss) && !EncounterScopes.isTfaBoss(boss)) {
+		if (!EncounterScopes.isToaBoss(boss) && !EncounterScopes.isTfaBoss(boss))
+		{
 			return null;
 		}
 
 		WorldView worldView = client.getTopLevelWorldView();
 		return worldView != null && worldView.isInstance()
-				? instanceScope(worldView)
-				: null;
+			? instanceScope(worldView)
+			: null;
 	}
 
-	String raidBegunScopeKey() {
+	String raidBegunScopeKey()
+	{
 		WorldView worldView = client.getTopLevelWorldView();
-		if (worldView != null && worldView.isInstance()) {
-			return PartybaseDefDefenceSync.SCOPE_INSTANCE + ":" + EncounterScopes.instanceFingerprint(worldView);
+		if (worldView != null && worldView.isInstance())
+		{
+			return PartybaseDefenceSync.SCOPE_INSTANCE + ":" + EncounterScopes.instanceFingerprint(worldView);
 		}
 		SyncScope scope = current();
 		return scope == null ? null : scope.getType() + ":" + scope.getId();
 	}
 
-	boolean incomingScopeMatches(PartybaseDefDefenceSync event, BossDefence boss, NPC localBoss) {
-		if (!scopeMatches(event.getScopeType(), event.getScopeId(), boss)) {
+	boolean incomingScopeMatches(PartybaseDefenceSync event, BossDefence boss, NPC localBoss)
+	{
+		if (!scopeMatches(event.getScopeType(), event.getScopeId(), boss))
+		{
 			return false;
 		}
-		if (event.getScopeType() != PartybaseDefDefenceSync.SCOPE_WORLD) {
+		if (event.getScopeType() != PartybaseDefenceSync.SCOPE_WORLD)
+		{
 			return true;
 		}
-		if (localBoss == null) {
+		if (localBoss == null)
+		{
 			return false;
 		}
 
@@ -107,17 +129,21 @@ final class EncounterScopeResolver {
 		WorldPoint point = localBoss.getWorldLocation();
 		WorldPoint remotePoint = event.getBossLocation();
 		if (point == null || remotePoint == null
-				|| point.distanceTo(remotePoint) > EncounterScopes.POSITION_TOLERANCE) {
+			|| point.distanceTo(remotePoint) > EncounterScopes.POSITION_TOLERANCE)
+		{
 			return false;
 		}
 		return healthMatches(localBoss, event.getHealthPercent());
 	}
 
-	boolean scopeMatches(int scopeType, int scopeId, BossDefence boss) {
+	boolean scopeMatches(int scopeType, int scopeId, BossDefence boss)
+	{
 		int expectedRaidScope = EncounterScopes.raidScopeType(boss);
-		if (expectedRaidScope != -1) {
+		if (expectedRaidScope != -1)
+		{
 			// A peer can still use the instance id after the controller disappears.
-			if (scopeType == PartybaseDefDefenceSync.SCOPE_INSTANCE) {
+			if (scopeType == PartybaseDefenceSync.SCOPE_INSTANCE)
+			{
 				WorldView raidWorldView = client.getTopLevelWorldView();
 				return matchesInstance(raidWorldView, scopeId);
 			}
@@ -126,64 +152,76 @@ final class EncounterScopeResolver {
 		}
 
 		WorldView worldView = client.getTopLevelWorldView();
-		if (worldView == null) {
+		if (worldView == null)
+		{
 			return false;
 		}
-		if (scopeType == PartybaseDefDefenceSync.SCOPE_INSTANCE) {
+		if (scopeType == PartybaseDefenceSync.SCOPE_INSTANCE)
+		{
 			return matchesInstance(worldView, scopeId);
 		}
-		return scopeType == PartybaseDefDefenceSync.SCOPE_WORLD && !worldView.isInstance();
+		return scopeType == PartybaseDefenceSync.SCOPE_WORLD && !worldView.isInstance();
 	}
 
-	boolean syncScopeStillValid(int scopeType, int scopeId) {
-		if (client.getGameState() != GameState.LOGGED_IN || !partyService.isInParty()) {
+	boolean syncScopeStillValid(int scopeType, int scopeId)
+	{
+		if (client.getGameState() != GameState.LOGGED_IN || !partyService.isInParty())
+		{
 			return false;
 		}
-		switch (scopeType) {
-			case PartybaseDefDefenceSync.SCOPE_COX:
-			case PartybaseDefDefenceSync.SCOPE_TOB:
+		switch (scopeType)
+		{
+			case PartybaseDefenceSync.SCOPE_COX:
+			case PartybaseDefenceSync.SCOPE_TOB:
 				return scopeId > 0 && raidController(scopeType) == scopeId;
-			case PartybaseDefDefenceSync.SCOPE_INSTANCE:
+			case PartybaseDefenceSync.SCOPE_INSTANCE:
 				WorldView worldView = client.getTopLevelWorldView();
 				return matchesInstance(worldView, scopeId);
-			case PartybaseDefDefenceSync.SCOPE_WORLD:
+			case PartybaseDefenceSync.SCOPE_WORLD:
 			default:
 				// Leaving render does not end an open-world encounter.
 				return true;
 		}
 	}
 
-	private static SyncScope instanceScope(WorldView worldView) {
-		return new SyncScope(PartybaseDefDefenceSync.SCOPE_INSTANCE, EncounterScopes.instanceFingerprint(worldView));
+	private static SyncScope instanceScope(WorldView worldView)
+	{
+		return new SyncScope(PartybaseDefenceSync.SCOPE_INSTANCE, EncounterScopes.instanceFingerprint(worldView));
 	}
 
-	private static boolean matchesInstance(WorldView worldView, int scopeId) {
+	private static boolean matchesInstance(WorldView worldView, int scopeId)
+	{
 		return worldView != null && worldView.isInstance()
-				&& EncounterScopes.instanceFingerprint(worldView) == scopeId;
+			&& EncounterScopes.instanceFingerprint(worldView) == scopeId;
 	}
 
-	int raidController(int scopeType) {
-		switch (scopeType) {
-			case PartybaseDefDefenceSync.SCOPE_COX:
+	int raidController(int scopeType)
+	{
+		switch (scopeType)
+		{
+			case PartybaseDefenceSync.SCOPE_COX:
 				return client.getVarpValue(VarPlayerID.RAIDS_PARTY_GROUPHOLDER);
-			case PartybaseDefDefenceSync.SCOPE_TOB:
+			case PartybaseDefenceSync.SCOPE_TOB:
 				return client.getVarpValue(VarPlayerID.TOB_MYCONTROLLER);
 			default:
 				return -1;
 		}
 	}
 
-	static boolean healthMatches(NPC npc, int remoteHp) {
+	static boolean healthMatches(NPC npc, int remoteHp)
+	{
 		int localHp = healthPercent(npc);
 		return localHp < 0 || remoteHp < 0
-				|| Math.abs(localHp - remoteHp) <= EncounterScopes.HEALTH_PERCENT_TOLERANCE;
+			|| Math.abs(localHp - remoteHp) <= EncounterScopes.HEALTH_PERCENT_TOLERANCE;
 	}
 
-	static int healthPercent(NPC npc) {
-		if (npc == null || npc.getHealthRatio() < 0 || npc.getHealthScale() <= 0) {
+	static int healthPercent(NPC npc)
+	{
+		if (npc == null || npc.getHealthRatio() < 0 || npc.getHealthScale() <= 0)
+		{
 			return -1;
 		}
 		return Math.max(0, Math.min(100,
-				(int) Math.round(npc.getHealthRatio() * 100.0 / npc.getHealthScale())));
+			(int) Math.round(npc.getHealthRatio() * 100.0 / npc.getHealthScale())));
 	}
 }

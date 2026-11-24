@@ -1,19 +1,20 @@
 package com.matthewloller.partybase.defence;
 
+import com.matthewloller.partybase.defence.boss.BossNpcMatcher;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
-import com.matthewloller.partybase.defence.boss.BossNpcMatcher;
 import net.runelite.api.NPC;
 
 // Static boss stats and lifecycle metadata.
 // Columns: display name, Defence, Magic, Attack, Strength, magic Defence bonus, floor, flags.
 // Levels and floors follow osrs-dps-calc.
 @Getter
-public enum BossDefence {
+public enum BossDefence
+{
 	TFA_ARCHIVE_GUARDIAN("Archive Guardian", 260, 250, 250, 240, 130, 156, Flag.TFA),
 	TFA_EZEKIEL("Ezekiel", 130, 200, 250, 150, 200, 78, Flag.TFA),
 	TFA_BORK("Bork", 300, 90, 200, 200, 300, 180, Flag.TFA),
@@ -45,7 +46,7 @@ public enum BossDefence {
 	GREAT_OLM("Great Olm", 150, 250, 250, 250, 200, 0, Flag.COX_SCALED),
 	GREAT_OLM_LEFT_CLAW("Great Olm (Left claw)", 175, 175, 250, 250, 200, 0, Flag.COX_SCALED, Flag.COX_MAGIC_SCALED),
 	GREAT_OLM_RIGHT_CLAW("Great Olm (Right claw)", 175, 87, 250, 250, 50, 0, Flag.COX_SCALED, Flag.COX_MAGIC_SCALED),
-	
+
 	// Tombs of Amascut
 	BA_BA("Ba-Ba", 80, 100, 150, 160, 280, 60),
 	KEPHRI("Kephri", 80, 125, 0, 0, 200, 60),
@@ -114,7 +115,8 @@ public enum BossDefence {
 	VARDORVIS("Vardorvis", 0, 215, 280, 0, 580, 0);
 
 	// Behavioural flags.
-	public enum Flag {
+	public enum Flag
+	{
 		// Magic defence uses defence level.
 		MAGIC_USES_DEFENCE,
 		// CoX scales magic using the defensive party-size factor.
@@ -141,9 +143,11 @@ public enum BossDefence {
 	private final Set<Flag> flags;
 
 	BossDefence(String npcName, int baseDef, int baseMagic, int baseAtk, int baseStr, int baseMagicDef, int minDef,
-			Flag... flags) {
+		Flag... flags)
+	{
 		if (baseDef < 0 || baseMagic < 0 || baseAtk < 0 || baseStr < 0 || baseMagicDef < 0
-				|| minDef < 0 || minDef > baseDef) {
+			|| minDef < 0 || minDef > baseDef)
+		{
 			throw new IllegalArgumentException("Invalid defence values for " + name());
 		}
 		this.npcName = Objects.requireNonNull(npcName, "npcName");
@@ -154,33 +158,40 @@ public enum BossDefence {
 		this.baseMagicDef = baseMagicDef;
 		this.minDef = minDef;
 		this.flags = EnumSet.noneOf(Flag.class);
-		if (flags != null) {
+		if (flags != null)
+		{
 			this.flags.addAll(Arrays.asList(flags));
 		}
 	}
 
-	public boolean has(Flag flag) {
+	public boolean has(Flag flag)
+	{
 		return flags.contains(flag);
 	}
 
 	// Tekton's enraged form uses the same tracked encounter. This makes sure that TEKTON_ENRAGED is treated as TEKTON within the encounter.
-	public BossDefence trackingType() {
+	public BossDefence trackingType()
+	{
 		return this == TEKTON_ENRAGED ? TEKTON : this;
 	}
 
-	public static BossDefence matchingNpc(NPC npc) {
+	public static BossDefence matchingNpc(NPC npc)
+	{
 		return BossNpcMatcher.matchingNpc(npc);
 	}
 
-	static boolean isAttackableOcellusPhaseTwo(NPC npc) {
+	static boolean isAttackableOcellusPhaseTwo(NPC npc)
+	{
 		return BossNpcMatcher.isAttackableOcellusPhaseTwo(npc);
 	}
 
-	static boolean isLiveNpc(NPC npc) {
+	static boolean isLiveNpc(NPC npc)
+	{
 		return BossNpcMatcher.isLiveNpc(npc);
 	}
 
-	public static BossDefence matchingNpcName(String name) {
+	public static BossDefence matchingNpcName(String name)
+	{
 		return BossNpcMatcher.matchingNpcName(name);
 	}
 

@@ -33,9 +33,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import net.runelite.client.ui.FontManager;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 
 /** The DPS tab: a live bar meter, then the fight details. Swing thread only. */
 class DpsPanel extends JPanel

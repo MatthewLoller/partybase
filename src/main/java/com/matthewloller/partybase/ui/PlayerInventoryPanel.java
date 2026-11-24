@@ -24,19 +24,18 @@
  */
 package com.matthewloller.partybase.ui;
 
-import net.runelite.client.game.ItemManager;
-import net.runelite.client.ui.DynamicGridLayout;
-import net.runelite.client.ui.PluginPanel;
 import com.matthewloller.partybase.PartybasePlugin;
 import com.matthewloller.partybase.data.GameItem;
-
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.DynamicGridLayout;
+import net.runelite.client.ui.PluginPanel;
 
 public class PlayerInventoryPanel extends JPanel
 {

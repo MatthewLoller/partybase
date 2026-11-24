@@ -5,7 +5,8 @@ import net.runelite.client.party.messages.PartyMemberMessage;
 
 // Encounter heartbeat used to validate standard party specs.
 @ToString(doNotUseGetters = true)
-public class PartybaseDefEncounterPresence extends PartyMemberMessage {
+public class PartybaseDefenceEncounterPresence extends PartyMemberMessage
+{
 	public static final int PROTOCOL_VERSION = 1;
 
 	private int protocolVersion;
@@ -18,10 +19,12 @@ public class PartybaseDefEncounterPresence extends PartyMemberMessage {
 	private long partyId;
 
 	// Gson.
-	public PartybaseDefEncounterPresence() {
+	public PartybaseDefenceEncounterPresence()
+	{
 	}
 
-	public PartybaseDefEncounterPresence(int world, int scopeType, int scopeId) {
+	public PartybaseDefenceEncounterPresence(int world, int scopeType, int scopeId)
+	{
 		this.protocolVersion = PROTOCOL_VERSION;
 		this.world = world;
 		this.scopeType = scopeType;
@@ -29,25 +32,32 @@ public class PartybaseDefEncounterPresence extends PartyMemberMessage {
 		this.sentAtMillis = System.currentTimeMillis();
 	}
 
-	public int getProtocolVersion() {
+	public int getProtocolVersion()
+	{
 		return protocolVersion;
 	}
-	public int getWorld() {
+	public int getWorld()
+	{
 		return world;
 	}
-	public int getScopeType() {
+	public int getScopeType()
+	{
 		return scopeType;
 	}
-	public int getScopeId() {
+	public int getScopeId()
+	{
 		return scopeId;
 	}
-	public long getSentAtMillis() {
+	public long getSentAtMillis()
+	{
 		return sentAtMillis;
 	}
-	public long getPartyId() {
+	public long getPartyId()
+	{
 		return partyId;
 	}
-	public PartybaseDefEncounterPresence withPartyId(long partyId) {
+	public PartybaseDefenceEncounterPresence withPartyId(long partyId)
+	{
 		this.partyId = partyId;
 		return this;
 	}

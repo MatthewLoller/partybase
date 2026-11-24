@@ -37,11 +37,6 @@ tasks.withType(JavaCompile).configureEach {
 	options.release.set(11)
 }
 
-// The defence package is ported from Better Party Defence and keeps its own code style
-tasks.withType(Checkstyle).configureEach {
-	exclude '**/partybase/defence/**'
-}
-
 // Launches RuneLite with Partybase loaded, in developer mode
 tasks.register('run', JavaExec) {
 	classpath = sourceSets.test.runtimeClasspath

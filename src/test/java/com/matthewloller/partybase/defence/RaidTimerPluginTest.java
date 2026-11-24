@@ -1,16 +1,15 @@
 package com.matthewloller.partybase.defence;
 
-import com.matthewloller.partybase.PartybaseConfig;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import com.matthewloller.partybase.defence.DefenceTracker.SpecHistoryEntry;
 import net.runelite.api.Client;
 import net.runelite.api.IndexedObjectSet;
 import net.runelite.api.NPC;
@@ -21,14 +20,16 @@ import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import org.junit.Before;
 import org.junit.Test;
 
-public class RaidTimerPluginTest {
+public class RaidTimerPluginTest
+{
 	private DefenceModule plugin;
 	private DefenceTracker tracker;
 	private Client client;
 	private WorldView world;
 	private NPC npc;
 
-	private void set(String name, Object value) throws Exception {
+	private void set(String name, Object value) throws Exception
+	{
 		Field field = DefenceModule.class.getDeclaredField(name);
 		field.setAccessible(true);
 		field.set(plugin, value);
@@ -36,7 +37,8 @@ public class RaidTimerPluginTest {
 
 	@Before
 	@SuppressWarnings("unchecked")
-	public void setup() throws Exception {
+	public void setup() throws Exception
+	{
 		client = mock(Client.class);
 		world = mock(WorldView.class);
 		IndexedObjectSet<? extends NPC> npcs = mock(IndexedObjectSet.class);
@@ -57,22 +59,25 @@ public class RaidTimerPluginTest {
 		set("defenceTracker", tracker);
 	}
 
-	private void timerScript(int scriptId, int elapsed, int stopped) {
+	private void timerScript(int scriptId, int elapsed, int stopped)
+	{
 		ScriptEvent scriptEvent = mock(ScriptEvent.class);
-		when(scriptEvent.getArguments()).thenReturn(new Object[]{scriptId, elapsed, stopped});
+		when(scriptEvent.getArguments()).thenReturn(new Object[] {scriptId, elapsed, stopped});
 		ScriptPreFired event = new ScriptPreFired(scriptId);
 		event.setScriptEvent(scriptEvent);
 		plugin.onScriptPreFired(event);
 	}
 
-	private SpecHistoryEntry localSpec(int tick) {
+	private SpecHistoryEntry localSpec(int tick)
+	{
 		when(client.getTickCount()).thenReturn(tick);
 		tracker.queueLocal(SpecialWeapon.DRAGON_WARHAMMER, 1, 1, 301, "Alice");
 		tracker.onGameTick();
 		return tracker.specHistory().get(0);
 	}
 
-	private void coxPoll(int tick) throws Exception {
+	private void coxPoll(int tick) throws Exception
+	{
 		Method update = DefenceModule.class.getDeclaredMethod("updateRaidTimerClock", int.class);
 		update.setAccessible(true);
 		update.invoke(plugin, tick);
@@ -82,7 +87,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void tfaTimerScriptAnchorsRaidElapsedTicks() {
+	public void tfaTimerScriptAnchorsRaidElapsedTicks()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarpValue(net.runelite.api.gameval.VarPlayerID.TFA_MYCONTROLLER)).thenReturn(77);
 		when(client.getTickCount()).thenReturn(5_000);
@@ -95,7 +101,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void toaTimerUsesAStableControllerScopeAcrossRooms() {
+	public void toaTimerUsesAStableControllerScopeAcrossRooms()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarpValue(net.runelite.api.gameval.VarPlayerID.TOA_MYCONTROLLER)).thenReturn(88);
 		when(client.getTickCount()).thenReturn(5_000);
@@ -111,7 +118,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void toaTimerScriptUsesTheSharedInstanceScope() {
+	public void toaTimerScriptUsesTheSharedInstanceScope()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getTickCount()).thenReturn(9_000);
 
@@ -123,7 +131,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void tfaTimerKeepsItsControllerScopeAcrossRoomScenes() {
+	public void tfaTimerKeepsItsControllerScopeAcrossRoomScenes()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarpValue(net.runelite.api.gameval.VarPlayerID.TFA_MYCONTROLLER)).thenReturn(77);
 		when(client.getTickCount()).thenReturn(5_000);
@@ -141,7 +150,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void stoppedTimerStopsAnchoringNewSpecs() {
+	public void stoppedTimerStopsAnchoringNewSpecs()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarpValue(net.runelite.api.gameval.VarPlayerID.TFA_MYCONTROLLER)).thenReturn(77);
 		when(client.getTickCount()).thenReturn(5_000);
@@ -156,7 +166,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void clearedTimerDoesNotLeaveAStaleAnchor() {
+	public void clearedTimerDoesNotLeaveAStaleAnchor()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarpValue(net.runelite.api.gameval.VarPlayerID.TFA_MYCONTROLLER)).thenReturn(77);
 		when(client.getTickCount()).thenReturn(5_000);
@@ -170,7 +181,8 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void timerOutsideAnInstanceIsIgnored() {
+	public void timerOutsideAnInstanceIsIgnored()
+	{
 		when(world.isInstance()).thenReturn(false);
 		when(client.getTickCount()).thenReturn(5_000);
 		timerScript(RaidTimerClock.TFA_TIMER_SCRIPT, 0, 0);
@@ -181,16 +193,20 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void coxProgressZeroIsStillTheLobby() {
+	public void coxProgressZeroIsStillTheLobby()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_INDUNGEON)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_PROGRESS)).thenReturn(0);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_TIMER)).thenReturn(0);
 		when(client.getTickCount()).thenReturn(5_000);
 
-		try {
+		try
+		{
 			coxPoll(5_000);
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			throw new AssertionError(e);
 		}
 		SpecHistoryEntry entry = localSpec(5_003);
@@ -199,17 +215,22 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void coxRunningTimerAnchorsProgressElapsedTicks() {
+	public void coxRunningTimerAnchorsProgressElapsedTicks()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_INDUNGEON)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_PROGRESS)).thenReturn(1);
 		when(client.getTickCount()).thenReturn(5_000);
 
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 5; i++)
+		{
 			when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_TIMER)).thenReturn(30 + i);
-			try {
+			try
+			{
 				coxPoll(5_000 + i);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				throw new AssertionError(e);
 			}
 		}
@@ -220,17 +241,22 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void frozenCoxTimerFallsBackInsteadOfFreezingElapsedTime() {
+	public void frozenCoxTimerFallsBackInsteadOfFreezingElapsedTime()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_INDUNGEON)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_PROGRESS)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_TIMER)).thenReturn(30);
 		when(client.getTickCount()).thenReturn(5_000);
 
-		for (int tick = 5_000; tick <= 5_010; tick++) {
-			try {
+		for (int tick = 5_000; tick <= 5_010; tick++)
+		{
+			try
+			{
 				coxPoll(tick);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				throw new AssertionError(e);
 			}
 		}
@@ -240,22 +266,29 @@ public class RaidTimerPluginTest {
 	}
 
 	@Test
-	public void coxExitClearsTheTimerDomain() {
+	public void coxExitClearsTheTimerDomain()
+	{
 		when(world.isInstance()).thenReturn(true);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_INDUNGEON)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_PROGRESS)).thenReturn(1);
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_TIMER)).thenReturn(30);
 		when(client.getTickCount()).thenReturn(5_000);
-		try {
+		try
+		{
 			coxPoll(5_000);
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			throw new AssertionError(e);
 		}
 
 		when(client.getVarbitValue(net.runelite.api.gameval.VarbitID.RAIDS_CLIENT_INDUNGEON)).thenReturn(0);
-		try {
+		try
+		{
 			coxPoll(5_001);
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			throw new AssertionError(e);
 		}
 		SpecHistoryEntry entry = localSpec(5_002);

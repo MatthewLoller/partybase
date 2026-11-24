@@ -24,6 +24,9 @@
  */
 package com.matthewloller.partybase.ui.prayer;
 
+import com.matthewloller.partybase.data.PartyPlayer;
+import com.matthewloller.partybase.data.PrayerData;
+import com.matthewloller.partybase.data.Prayers;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -42,9 +45,6 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import com.matthewloller.partybase.data.PartyPlayer;
-import com.matthewloller.partybase.data.PrayerData;
-import com.matthewloller.partybase.data.Prayers;
 
 public class PlayerPrayerPanel extends JPanel
 {
