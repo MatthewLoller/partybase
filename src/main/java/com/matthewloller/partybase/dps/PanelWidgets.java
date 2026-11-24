@@ -1,0 +1,180 @@
+package com.matthewloller.partybase.dps;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
+
+/** The small Swing pieces both panel tabs are built from. Swing thread only. */
+final class PanelWidgets
+{
+	static final Color GOLD = new Color(255, 196, 0);
+
+	private PanelWidgets()
+	{
+	}
+
+	static JButton button(String text, String tip, Runnable action)
+	{
+		JButton b = new JButton(text);
+		b.setToolTipText(tip);
+		b.setFocusable(false);
+		b.setMargin(new Insets(2, 2, 2, 2));
+		b.setFont(FontManager.getRunescapeSmallFont());
+		b.addActionListener(e -> action.run());
+		return b;
+	}
+
+	static JLabel small(String text, Color color)
+	{
+		JLabel l = new JLabel(text);
+		l.setFont(FontManager.getRunescapeSmallFont());
+		l.setForeground(color);
+		l.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+		return l;
+	}
+
+	static JLabel bold(String text, Color color)
+	{
+		JLabel l = new JLabel(text);
+		l.setFont(FontManager.getRunescapeBoldFont());
+		l.setForeground(color);
+		return l;
+	}
+
+	/** A gray hint in the default font. */
+	static JLabel note(String text)
+	{
+		JLabel l = new JLabel(text);
+		l.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		l.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+		return l;
+	}
+
+	/** A dark card that holds lines. */
+	static JPanel section()
+	{
+		// never taller than its lines, also when the panel has room to spare
+		JPanel p = new JPanel(new GridLayout(0, 1, 0, 1))
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
+		p.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		p.setBorder(BorderFactory.createEmptyBorder(5, 6, 5, 6));
+		p.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+		return p;
+	}
+
+	static JComponent line(String key, String value)
+	{
+		return line(key, value, null);
+	}
+
+	/** A title on the left and a small gray action word ("hide", "reset") on the right; a click runs it. */
+	static JComponent actionRow(JLabel title, String action, String tip, Runnable onClick)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.add(title, BorderLayout.WEST);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
+		if (action == null)
+		{
+			return row;
+		}
+		row.add(small(action, ColorScheme.LIGHT_GRAY_COLOR), BorderLayout.EAST);
+		row.setToolTipText(tip);
+		clickable(row, onClick);
+		return row;
+	}
+
+	/** A right-click menu with one item, on the component and everything in it. */
+	static void rightClickMenu(JComponent c, String item, Runnable onClick)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem menuItem = new JMenuItem(item);
+		menuItem.addActionListener(e -> onClick.run());
+		menu.add(menuItem);
+		c.setComponentPopupMenu(menu);
+		inheritMenu(c);
+	}
+
+	private static void inheritMenu(Container c)
+	{
+		for (Component child : c.getComponents())
+		{
+			if (child instanceof JComponent)
+			{
+				((JComponent) child).setInheritsPopupMenu(true);
+			}
+			if (child instanceof Container)
+			{
+				inheritMenu((Container) child);
+			}
+		}
+	}
+
+	/** A hand cursor, and a left click runs {@code onClick}. Labels with a tooltip catch clicks, so they get it too. */
+	static void clickable(Component c, Runnable onClick)
+	{
+		c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		c.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				// a right click opens a menu, if there is one; it should not also open or close a section
+				if (SwingUtilities.isLeftMouseButton(e))
+				{
+					onClick.run();
+				}
+			}
+		});
+		if (c instanceof Container)
+		{
+			for (Component child : ((Container) c).getComponents())
+			{
+				clickable(child, onClick);
+			}
+		}
+	}
+
+	/** A key on the left and a value on the right; {@code highlight} colors both. */
+	static JComponent line(String key, String value, Color highlight)
+	{
+		JPanel p = new JPanel(new BorderLayout());
+		p.setOpaque(false);
+		JLabel keyLabel = new JLabel(key);
+		keyLabel.setForeground(highlight != null ? highlight : ColorScheme.LIGHT_GRAY_COLOR);
+		keyLabel.setFont(FontManager.getRunescapeSmallFont());
+		JLabel valueLabel = new JLabel(value);
+		valueLabel.setForeground(highlight != null ? highlight : Color.WHITE);
+		valueLabel.setFont(FontManager.getRunescapeSmallFont());
+		// in the center the key gets what the value leaves and ends with "..." instead of overlapping it
+		keyLabel.setToolTipText(key);
+		p.add(keyLabel, BorderLayout.CENTER);
+		p.add(valueLabel, BorderLayout.EAST);
+		p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 16));
+		return p;
+	}
+}

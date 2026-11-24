@@ -3,6 +3,7 @@ package com.matthewloller.partybase;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
 import lombok.Getter;
+import com.matthewloller.partybase.dps.DpsModule;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -32,7 +33,10 @@ import net.runelite.client.party.events.UserPart;
 import net.runelite.client.party.messages.PartyData;
 import net.runelite.client.party.messages.UserSync;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.slayer.SlayerPlugin;
 import net.runelite.client.task.Schedule;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
@@ -62,8 +66,14 @@ import java.util.Set;
 
 @Slf4j
 @PluginDescriptor(
-		name = "Partybase"
+		name = "Partybase",
+		description = "Party side panel with member info and a party DPS meter",
+		tags = {"party", "group", "dps", "damage", "meter", "boss", "pvm", "raid"},
+		// names the data folder: .runelite/plugin-data/partybase
+		internalName = "partybase"
 )
+// the DPS hit chance counts the slayer helmet on the task that RuneLite's Slayer plugin knows
+@PluginDependency(SlayerPlugin.class)
 public class PartybasePlugin extends Plugin
 {
 	private static final BufferedImage ICON = ImageUtil.loadImageResource(PartybasePlugin.class, "icon.png");
@@ -110,6 +120,14 @@ public class PartybasePlugin extends Plugin
 	@Inject
 	private PartyReminderOverlay partyReminderOverlay;
 
+	@Inject
+	private EventBus eventBus;
+
+	/** The DPS meter (ported from GoldenDPS); its panel is the DPS tab. */
+	@Getter
+	@Inject
+	private DpsModule dps;
+
 	@Provides
 	PartybaseConfig provideConfig(ConfigManager configManager)
 	{
@@ -134,6 +152,9 @@ public class PartybasePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		dps.startUp(getPluginDirectory());
+		eventBus.register(dps);
+
 		panel = new PartybasePanel(this);
 		navButton = NavigationButton.builder()
 				.tooltip("Partybase")
@@ -195,6 +216,9 @@ public class PartybasePlugin extends Plugin
 		panel.getPlayerPanelMap().clear();
 		lastLogout = null;
 		overlayManager.remove(partyReminderOverlay);
+
+		eventBus.unregister(dps);
+		dps.shutDown();
 	}
 
 	@Subscribe

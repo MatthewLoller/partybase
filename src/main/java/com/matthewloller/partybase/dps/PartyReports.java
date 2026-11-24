@@ -1,0 +1,139 @@
+package com.matthewloller.partybase.dps;
+
+import com.matthewloller.partybase.PartybaseConfig;
+import com.matthewloller.partybase.dps.model.AutoReports;
+import com.matthewloller.partybase.dps.model.BossRecords;
+import com.matthewloller.partybase.dps.model.Fight;
+import com.matthewloller.partybase.dps.model.FightReport;
+import com.matthewloller.partybase.dps.model.KillCounts;
+import com.matthewloller.partybase.dps.model.MeterMode;
+import com.matthewloller.partybase.dps.model.RaidPoints;
+import com.matthewloller.partybase.dps.model.ReportFormatter;
+import java.util.List;
+import net.runelite.client.party.PartyService;
+import net.runelite.client.party.messages.PartyChatMessage;
+
+/**
+ * Sends the top players of a fight to the RuneLite party chat, by hand or (for the leader)
+ * after every boss kill. Plugins may not write to the game chat, so the party chat is the only
+ * way to share a report. Client thread only.
+ */
+class PartyReports
+{
+	/** Reports by hand at most this often, so the party chat cannot be spammed. */
+	private static final long HAND_REPORT_MS = 10_000;
+
+	private final PartybaseConfig config;
+	private final PartyService partyService;
+	private final PartyManager party;
+	private final ChatNotifier chat;
+	private final FightStorage storage;
+	private final KillCounts killCounts;
+	private final RaidPoints raidPoints;
+	private final AutoReports autoReports = new AutoReports();
+	private long lastHandReportMs;
+
+	PartyReports(PartybaseConfig config, PartyService partyService, PartyManager party, ChatNotifier chat,
+		FightStorage storage, KillCounts killCounts, RaidPoints raidPoints)
+	{
+		this.config = config;
+		this.partyService = partyService;
+		this.party = party;
+		this.chat = chat;
+		this.storage = storage;
+		this.killCounts = killCounts;
+		this.raidPoints = raidPoints;
+	}
+
+	void fightEnded(Fight fight, int tick)
+	{
+		if (config.autoBossReport())
+		{
+			autoReports.fightEnded(fight, tick);
+		}
+	}
+
+	/** The leader reports boss kills and Barrows runs to the party by itself. */
+	void sendDue(int tick)
+	{
+		for (Fight fight : autoReports.due(tick))
+		{
+			if (config.autoBossReport() && party.isLeader())
+			{
+				send(fight, ReportKind.BOSS, false, System.currentTimeMillis());
+			}
+		}
+	}
+
+	void clear()
+	{
+		autoReports.clear();
+	}
+
+	/** A report button or menu click. */
+	void sendByHand(Fight fight, ReportKind kind, boolean session, long now)
+	{
+		long wait = lastHandReportMs + HAND_REPORT_MS - now;
+		if (wait > 0)
+		{
+			chat.info("wait " + (wait + 999) / 1000 + "s before the next report.");
+			return;
+		}
+		if (send(fight, kind, session, now))
+		{
+			lastHandReportMs = now;
+		}
+	}
+
+	/**
+	 * @param session the fight is the session total
+	 * @return true when the report was sent
+	 */
+	private boolean send(Fight fight, ReportKind kind, boolean session, long now)
+	{
+		if (fight == null)
+		{
+			chat.info("nothing to report yet.");
+			return false;
+		}
+		if (kind == ReportKind.BOSS && !fight.hasBossTarget())
+		{
+			chat.info("no boss in this fight.");
+			return false;
+		}
+		if (!party.inParty())
+		{
+			chat.info("join a party to report to it.");
+			return false;
+		}
+		for (String line : lines(fight, kind, session, now))
+		{
+			partyService.send(new PartyChatMessage(line));
+		}
+		return true;
+	}
+
+	private List<String> lines(Fight fight, ReportKind kind, boolean session, long now)
+	{
+		boolean bossOnly = kind == ReportKind.BOSS;
+		// a finished raid or Barrows run is reported as a whole, with its full time:
+		// "Chambers of Xeric complete: 31:30 - total 52,000 (27.5/s) - KC 21"
+		boolean completed = bossOnly && fight.isCompleteRaid();
+		FightReport report = FightReport.of(fight, bossOnly && !completed, now);
+		String title = session ? "Session" : completed ? "" : report.getTitle();
+		String label = completed ? fight.raid + (fight.run ? " run complete:" : " complete:") : kind.label;
+		MeterMode mode = kind == ReportKind.HEALING ? MeterMode.HEALING : MeterMode.DAMAGE;
+		List<String> lines = ReportFormatter.lines(report, mode, label, title, ReportFormatter.DEFAULT_TOP,
+			kind == ReportKind.OVERALL);
+		if (bossOnly && !session)
+		{
+			long endMs = fight.endMs > 0 ? fight.endMs : now;
+			int kc = killCounts.near(completed ? fight.raid : report.getTitle(), endMs);
+			String points = completed && !fight.run ? raidPoints.near(endMs) : null;
+			String pb = BossRecords.meterTag(null, storage.compare(fight.id));
+			lines.set(0, lines.get(0) + (kc > 0 ? " - KC " + kc : "") + (points != null ? " - " + points : "")
+				+ (pb != null ? " - " + pb : ""));
+		}
+		return lines;
+	}
+}

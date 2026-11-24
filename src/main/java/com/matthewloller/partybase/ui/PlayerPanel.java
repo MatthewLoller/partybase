@@ -61,6 +61,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,6 +100,8 @@ public class PlayerPanel extends JPanel
 	@Setter
 	private boolean showInfo;
 	private final Map<Integer, Boolean> tabMap = new HashMap<>();
+	/** The banner and its stat boxes: the parts that take clicks. */
+	private final Component[] bannerParts;
 
 	public PlayerPanel(final PartyPlayer selectedPlayer, final PartybaseConfig config,
 						final SpriteManager spriteManager, final ItemManager itemManager)
@@ -121,6 +124,7 @@ public class PlayerPanel extends JPanel
 		Component[] list = new Component[statsPanel.getComponentCount() + 1];
 		System.arraycopy(statsPanel.getComponents(), 0, list, 0, list.length - 1);
 		list[list.length - 1] = banner;
+		bannerParts = list;
 
 		for (Component comp : list)
 		{
@@ -163,6 +167,18 @@ public class PlayerPanel extends JPanel
 
 		revalidate();
 		repaint();
+	}
+
+	/** Adds a mouse listener to every part of the banner that takes clicks. */
+	public void addBannerMouseListener(final MouseListener listener)
+	{
+		for (Component comp : bannerParts)
+		{
+			if (comp instanceof JPanel)
+			{
+				comp.addMouseListener(listener);
+			}
+		}
 	}
 
 	private void addTab(final MaterialTabGroup tabGroup, final int spriteID, final JPanel panel, final String tooltip)

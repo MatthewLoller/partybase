@@ -1,0 +1,726 @@
+package com.matthewloller.partybase.dps.model;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FightTrackerTest
+{
+	private static final double D = 0.001;
+	private static final String BOSS = "301:10";
+	private static final String RAT = "301:20";
+
+	private FightTracker tracker;
+	private final List<Fight> ended = new ArrayList<>();
+
+	@Before
+	public void setUp()
+	{
+		tracker = new FightTracker();
+		tracker.setIdleTimeoutMs(10_000);
+		tracker.setListener(ended::add);
+	}
+
+	/** A hit by me, called in the same order as the plugin does it. */
+	private void myHit(long t, String key, boolean boss, int amount)
+	{
+		String name = boss ? "Vorkath" : "Rat";
+		tracker.playerHit(t, "Me", PlayerKind.LOCAL, key, 1, name, boss, amount, amount == 0);
+		tracker.seenHit(t, key, 1, name, boss, amount);
+	}
+
+	private void partyHit(long t, String who, String key, boolean boss, int amount, boolean alsoSeen)
+	{
+		String name = boss ? "Vorkath" : "Rat";
+		tracker.playerHit(t, who, PlayerKind.PARTY, key, 1, name, boss, amount, amount == 0);
+		if (alsoSeen)
+		{
+			tracker.seenHit(t, key, 1, name, boss, amount);
+		}
+	}
+
+	private FightReport report(Fight f, long now)
+	{
+		return FightReport.of(f, false, now);
+	}
+
+	@Test
+	public void theOverallMeterGoesOnOverBossKills()
+	{
+		myHit(1000, BOSS, true, 50);
+		tracker.npcDied(2000, BOSS, true);
+		assertTrue(tracker.isOverallGoingOn(5000));
+		myHit(6000, "301:11", true, 30);
+		assertEquals("both kills", 80, report(tracker.getOverall(7000), 7000).getTotalDamage());
+		tracker.npcDied(7000, "301:11", true);
+
+		// a break longer than the idle time starts the overall meter again
+		assertFalse(tracker.isOverallGoingOn(7000 + 10_001));
+		myHit(30_000, BOSS, true, 20);
+		assertEquals(20, report(tracker.getOverall(31_000), 31_000).getTotalDamage());
+	}
+
+	@Test
+	public void soloDamageDpsAndAccuracy()
+	{
+		myHit(0, RAT, false, 10);
+		myHit(2400, RAT, false, 0);
+		myHit(4800, RAT, false, 20);
+		myHit(10_000, RAT, false, 30);
+
+		FightReport r = report(tracker.getCurrent(), 10_000);
+		FightReport.PlayerRow me = r.row("Me");
+		assertEquals(60, me.damage);
+		assertEquals(3, me.hits);
+		assertEquals(1, me.misses);
+		assertEquals(30, me.biggestHit);
+		assertEquals("75% (3/4)", Format.accuracy(me.hits, me.misses));
+		assertEquals("-", Format.accuracy(0, 0));
+		TargetDamage onTarget = r.getTargets().get(0).attacksByPlayer.get("Me");
+		assertEquals(3, onTarget.hits);
+		assertEquals(1, onTarget.misses);
+		assertEquals(60 / (Fight.wholeTicks(10_000) / 1000.0), me.dps, D);
+		assertEquals(100.0, me.percent, D);
+		assertNull("solo: no unknown row", r.row(FightReport.UNKNOWN_NAME));
+		assertEquals(PlayerKind.LOCAL, me.kind);
+	}
+
+	@Test
+	public void partyDamageAndOthersUnknown()
+	{
+		myHit(0, BOSS, true, 30);
+		// party member hit: I see the hitsplat and get the report
+		partyHit(600, "Friend", BOSS, true, 20, true);
+		// someone without the plugin: I only see the hitsplat
+		tracker.seenHit(1200, BOSS, 1, "Vorkath", true, 50);
+
+		FightReport r = report(tracker.getCurrent(), 10_000);
+		assertEquals(100, r.getTotalDamage());
+		assertEquals(30, r.row("Me").damage);
+		assertEquals(20, r.row("Friend").damage);
+		assertEquals(50, r.row(FightReport.UNKNOWN_NAME).damage);
+		assertEquals(30.0, r.row("Me").percent, D);
+		assertEquals(50.0, r.row(FightReport.UNKNOWN_NAME).percent, D);
+
+		List<FightReport.PlayerRow> bars = r.sorted(MeterMode.DAMAGE);
+		assertEquals(FightReport.UNKNOWN_NAME, bars.get(0).name);
+		assertEquals("Me", bars.get(1).name);
+		assertEquals("Friend", bars.get(2).name);
+	}
+
+	@Test
+	public void partyHitOnTargetIDontSeeGivesNoNegativeUnknown()
+	{
+		myHit(0, RAT, false, 5);
+		partyHit(600, "Friend", "301:99", false, 40, false);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(45, r.getTotalDamage());
+		assertNull(r.row(FightReport.UNKNOWN_NAME));
+	}
+
+	@Test
+	public void poisonGetsItsOwnRow()
+	{
+		myHit(0, RAT, false, 10);
+		tracker.effectHit(600, RAT, 1, "Rat", false, 6);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(6, r.row(FightReport.EFFECTS_NAME).damage);
+		assertNull(r.row(FightReport.UNKNOWN_NAME));
+		assertEquals(16, r.getTotalDamage());
+	}
+
+	@Test
+	public void effectsBeforeAFightAreIgnored()
+	{
+		tracker.effectHit(0, RAT, 1, "Rat", false, 6);
+		assertNull(tracker.getCurrent());
+	}
+
+	@Test
+	public void othersHittingNormalNpcDoNotStartAFight()
+	{
+		tracker.seenHit(0, RAT, 1, "Rat", false, 10);
+		assertNull(tracker.getCurrent());
+	}
+
+	@Test
+	public void strangersOnABossStartAFightButItIsThrownAwayWithoutOurDamage()
+	{
+		tracker.seenHit(0, BOSS, 1, "Vorkath", true, 10);
+		assertNotNull(tracker.getCurrent());
+		tracker.tick(20_000);
+		assertNull(tracker.getCurrent());
+		assertTrue(tracker.getHistory().isEmpty());
+		assertTrue(ended.isEmpty());
+	}
+
+	@Test
+	public void bossDeathEndsTheFight()
+	{
+		myHit(0, BOSS, true, 50);
+		myHit(6000, BOSS, true, 50);
+		tracker.npcDied(7200, BOSS, true);
+
+		assertNull(tracker.getCurrent());
+		assertEquals(1, ended.size());
+		Fight f = ended.get(0);
+		assertEquals(7200, f.endMs);
+		assertEquals("Boss died", f.endReason);
+		assertEquals(7200, f.durationMs(99_999));
+		assertEquals("Vorkath", f.title());
+	}
+
+	@Test
+	public void normalNpcDeathDoesNotEndTheFight()
+	{
+		myHit(0, RAT, false, 5);
+		tracker.npcDied(600, RAT, false);
+		assertNotNull(tracker.getCurrent());
+	}
+
+	@Test
+	public void fightWithTwoBossesEndsWhenBothAreDead()
+	{
+		String other = "301:11";
+		myHit(0, BOSS, true, 10);
+		myHit(600, other, true, 10);
+		tracker.npcDied(1200, BOSS, true);
+		assertNotNull(tracker.getCurrent());
+		tracker.npcDied(1800, other, true);
+		assertNull(tracker.getCurrent());
+	}
+
+	@Test
+	public void lateReportFromPartyGoesIntoTheEndedFight()
+	{
+		myHit(0, BOSS, true, 50);
+		tracker.npcDied(3000, BOSS, true);
+		// network delay: the friend's last hit arrives after the boss died
+		partyHit(3500, "Friend", BOSS, true, 25, false);
+		tracker.heal(3600, "Friend", PlayerKind.PARTY, HealType.FOOD, 18);
+
+		assertNull("no new fight started", tracker.getCurrent());
+		Fight f = tracker.getHistory().get(0);
+		assertEquals(25, f.players.get("Friend").byTarget.get(BOSS).damage);
+		assertEquals(18, f.players.get("Friend").healFood);
+	}
+
+	@Test
+	public void veryLateReportStartsANewFight()
+	{
+		myHit(0, BOSS, true, 50);
+		tracker.npcDied(3000, BOSS, true);
+		partyHit(3000 + FightTracker.LATE_REPORT_MS + 1, "Friend", BOSS, true, 25, false);
+		assertNotNull(tracker.getCurrent());
+	}
+
+	@Test
+	public void idleTimeoutEndsWhenTheClockStopped()
+	{
+		myHit(1000, RAT, false, 5);
+		myHit(3000, RAT, false, 5);
+		tracker.tick(12_999);
+		assertNotNull(tracker.getCurrent());
+		tracker.tick(13_000);
+		assertNull(tracker.getCurrent());
+		Fight f = tracker.getHistory().get(0);
+		// last hit + pause time (10 s): the same time the live clock showed
+		assertEquals(13_000, f.endMs);
+		assertEquals(12_000, f.durationMs(99_999));
+		assertTrue(f.endReason.startsWith("No hits"));
+	}
+
+	@Test
+	public void bossOnlyModeHidesOtherTargets()
+	{
+		myHit(0, BOSS, true, 40);
+		myHit(600, RAT, false, 10);
+		tracker.seenHit(600, RAT, 1, "Rat", false, 7);
+
+		Fight f = tracker.getCurrent();
+		FightReport all = FightReport.of(f, false, 6000);
+		FightReport boss = FightReport.of(f, true, 6000);
+		assertEquals(57, all.getTotalDamage());
+		assertEquals(40, boss.getTotalDamage());
+		assertNull(boss.row(FightReport.UNKNOWN_NAME));
+		assertEquals(1, boss.getTargets().size());
+		assertEquals(2, all.getTargets().size());
+	}
+
+	@Test
+	public void targetsAreSplitByName()
+	{
+		myHit(0, "301:1", false, 10);
+		myHit(600, "301:2", false, 10); // second rat, same name
+		myHit(1200, BOSS, true, 50);
+		partyHit(1200, "Friend", BOSS, true, 25, true);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(2, r.getTargets().size());
+		FightReport.TargetRow vork = r.getTargets().get(0);
+		assertEquals("Vorkath", vork.name);
+		assertEquals(75, vork.total);
+		assertEquals("Me", vork.byPlayer.keySet().iterator().next());
+		FightReport.TargetRow rats = r.getTargets().get(1);
+		assertEquals("Rat", rats.name);
+		assertEquals(20, rats.total);
+	}
+
+	@Test
+	public void damageTakenAndHealingOnlyCountDuringAFight()
+	{
+		tracker.damageTaken(0, "Me", PlayerKind.LOCAL, 10);
+		tracker.heal(0, "Me", PlayerKind.LOCAL, HealType.FOOD, 20);
+		assertNull(tracker.getCurrent());
+
+		myHit(600, RAT, false, 5);
+		tracker.damageTaken(1200, "Me", PlayerKind.LOCAL, 12);
+		tracker.heal(1800, "Me", PlayerKind.LOCAL, HealType.FOOD, 20);
+		tracker.heal(1800, "Me", PlayerKind.LOCAL, HealType.LIFESTEAL, 5);
+		tracker.heal(2400, "Me", PlayerKind.LOCAL, HealType.REGEN, 1);
+		tracker.heal(2400, "Me", PlayerKind.LOCAL, HealType.RECEIVED, 30);
+		tracker.heal(3000, "Healer", PlayerKind.PARTY, HealType.HEAL_OTHER, 40);
+		tracker.damageTaken(3000, "Healer", PlayerKind.PARTY, 3);
+
+		Fight f = tracker.getCurrent();
+		FightReport r = FightReport.of(f, false, 6000);
+		assertEquals(12, r.row("Me").damageTaken);
+		assertEquals(25, r.row("Me").healing);
+		assertEquals(40, r.row("Healer").healing);
+
+		List<FightReport.PlayerRow> heals = r.sorted(MeterMode.HEALING);
+		assertEquals("Healer", heals.get(0).name);
+		assertEquals(2, heals.size());
+		assertEquals(65.0, r.total(MeterMode.HEALING), D);
+		assertEquals(15.0, r.total(MeterMode.DAMAGE_TAKEN), D);
+	}
+
+	@Test
+	public void overhealingIsCountedAndShown()
+	{
+		myHit(0, RAT, false, 5);
+		tracker.heal(600, "Me", PlayerKind.LOCAL, HealType.FOOD, 9, 11);
+		tracker.heal(1200, "Me", PlayerKind.LOCAL, HealType.LIFESTEAL, 0, 15);
+		tracker.heal(1200, "Friend", PlayerKind.PARTY, HealType.FOOD, 20, 2);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(9, r.row("Me").healing);
+		// lifesteal past full health is not counted: only the 11 food
+		assertEquals(11, r.row("Me").overheal);
+		// Me: 9 healed + 11 wasted = 20 -> 55%; group: 29 healed + 13 wasted -> 31%
+		assertEquals(100.0 * 11 / 20, r.row("Me").overhealPercent(), D);
+		assertEquals(100.0 * 2 / 22, r.row("Friend").overhealPercent(), D);
+		assertEquals(100.0 * 13 / 42, r.groupOverhealPercent(), D);
+		assertEquals(0.0, FightReport.overhealPercent(0, 0), D);
+
+		Fight copy = tracker.getCurrent().copy();
+		assertEquals(11, copy.players.get("Me").overheal());
+	}
+
+	@Test
+	public void sessionTotalAddsFightsTogether()
+	{
+		myHit(0, BOSS, true, 50);
+		tracker.npcDied(6000, BOSS, true);
+		myHit(60_000, BOSS, true, 70);   // same NPC slot again (new kill)
+		partyHit(61_000, "Friend", BOSS, true, 30, true);
+		tracker.npcDied(66_000, BOSS, true);
+
+		Fight total = tracker.getSessionTotal(70_000);
+		assertNotNull(total);
+		assertEquals(2, total.mergedFights);
+		assertEquals(12_000, total.durationMs(70_000));
+		FightReport r = report(total, 70_000);
+		assertEquals(120, r.row("Me").damage);
+		assertEquals(30, r.row("Friend").damage);
+		assertEquals(150.0 / 12.0, r.getGroupDps(), D);
+		assertEquals(1, r.getTargets().size());
+		assertFalse(total.isActive());
+	}
+
+	@Test
+	public void resetSessionStartsANewTotalButKeepsHistory()
+	{
+		myHit(0, RAT, false, 5);
+		tracker.resetSession(1000);
+		assertNull(tracker.getSessionTotal(2000));
+		assertEquals(1, tracker.getHistory().size());
+
+		myHit(5000, RAT, false, 7);
+		assertEquals(7, report(tracker.getSessionTotal(6000), 6000).row("Me").damage);
+	}
+
+	@Test
+	public void historyIsTrimmedNewestFirst()
+	{
+		tracker.setMaxHistory(2);
+		for (int i = 0; i < 3; i++)
+		{
+			long t = i * 100_000L;
+			myHit(t, RAT, false, i + 1);
+			tracker.tick(t + 20_000);
+		}
+		assertEquals(2, tracker.getHistory().size());
+		assertEquals(3, tracker.getHistory().get(0).players.get("Me").byTarget.get(RAT).damage);
+		assertSame(tracker.getHistory().get(0), tracker.getDisplayFight());
+	}
+
+	@Test
+	public void npcChangingIdKeepsOneTarget()
+	{
+		tracker.playerHit(0, "Me", PlayerKind.LOCAL, BOSS, 100, "Verzik Vitur", true, 10, false);
+		tracker.playerHit(600, "Me", PlayerKind.LOCAL, BOSS, 101, "Verzik Vitur", true, 10, false);
+		assertEquals(1, tracker.getCurrent().targets.size());
+		assertEquals(101, tracker.getCurrent().targets.get(BOSS).npcId);
+	}
+
+	@Test
+	public void guessedPlayerTakesDamageOutOfUnknown()
+	{
+		myHit(0, BOSS, true, 30);
+		tracker.seenHit(600, BOSS, 1, "Vorkath", true, 40);
+		tracker.estimateHit(600, "Bob", BOSS, 40, false);
+		tracker.seenHit(1200, BOSS, 1, "Vorkath", true, 0);
+		tracker.estimateHit(1200, "Bob", BOSS, 0, true);
+		tracker.seenHit(1800, BOSS, 1, "Vorkath", true, 25); // nobody fits
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		FightReport.PlayerRow bob = r.row("Bob");
+		assertEquals(PlayerKind.ESTIMATE, bob.kind);
+		assertTrue(bob.isEstimate());
+		assertEquals(40, bob.damage);
+		assertEquals(1, bob.hits);
+		assertEquals(1, bob.misses);
+		assertEquals(25, r.row(FightReport.UNKNOWN_NAME).damage);
+		assertEquals(95, r.getTotalDamage());
+		assertEquals(Long.valueOf(40), r.getTargets().get(0).byPlayer.get("Bob"));
+	}
+
+	@Test
+	public void seenDamageTakenOnOtherPlayers()
+	{
+		tracker.seenDamageTaken(0, "Bob", 10); // no fight yet
+		myHit(0, RAT, false, 5);
+		tracker.seenDamageTaken(600, "Bob", 12);
+		tracker.seenDamageTaken(600, "Bob", 8);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(20, r.row("Bob").damageTaken);
+		assertEquals("Bob", r.sorted(MeterMode.DAMAGE_TAKEN).get(0).name);
+		assertTrue("no healing data for guessed players", r.sorted(MeterMode.HEALING).isEmpty());
+	}
+
+	@Test
+	public void partyReportsWinOverGuesses()
+	{
+		myHit(0, BOSS, true, 30);
+		tracker.seenHit(600, BOSS, 1, "Vorkath", true, 40);
+		tracker.estimateHit(600, "Friend", BOSS, 40, false);
+		tracker.seenDamageTaken(600, "Friend", 9);
+		// then Friend's own report arrives: they run Partybase
+		partyHit(900, "Friend", BOSS, true, 40, false);
+		tracker.damageTaken(900, "Friend", PlayerKind.PARTY, 9);
+		// later guesses for Friend are ignored
+		tracker.estimateHit(1200, "Friend", BOSS, 99, false);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		FightReport.PlayerRow f = r.row("Friend");
+		assertEquals(PlayerKind.PARTY, f.kind);
+		assertEquals(40, f.damage);
+		assertEquals(9, f.damageTaken);
+		assertEquals(70, r.getTotalDamage());
+		assertNull(r.row(FightReport.UNKNOWN_NAME));
+	}
+
+	@Test
+	public void guessesOnTargetsWeDidNotFightDoNotCount()
+	{
+		myHit(0, RAT, false, 5);
+		tracker.seenHit(600, BOSS, 1, "Vorkath", true, 40);
+		tracker.estimateHit(600, "Bob", BOSS, 40, false);
+
+		FightReport r = report(tracker.getCurrent(), 6000);
+		assertEquals(0, r.row("Bob").damage);
+		assertEquals(5, r.getTotalDamage());
+	}
+
+	@Test
+	public void guessesSurviveSessionMerge()
+	{
+		myHit(0, BOSS, true, 30);
+		tracker.seenHit(600, BOSS, 1, "Vorkath", true, 40);
+		tracker.estimateHit(600, "Bob", BOSS, 40, false);
+		tracker.seenDamageTaken(600, "Bob", 7);
+		tracker.npcDied(1200, BOSS, true);
+
+		FightReport r = report(tracker.getSessionTotal(5000), 5000);
+		assertEquals(40, r.row("Bob").damage);
+		assertEquals(7, r.row("Bob").damageTaken);
+	}
+
+	@Test
+	public void bossDpsUsesOnlyBossTime()
+	{
+		myHit(0, RAT, false, 100);           // trash first
+		myHit(10_000, BOSS, true, 50);       // boss from 10s
+		myHit(20_000, BOSS, true, 50);
+		tracker.npcDied(30_000, BOSS, true); // boss dead at 30s
+
+		Fight f = tracker.getHistory().get(0);
+		assertEquals(30_000, f.durationMs(99_999));
+		assertEquals(Fight.wholeTicks(20_000), f.bossDurationMs(99_999));
+
+		FightReport all = FightReport.of(f, false, 99_999);
+		FightReport boss = FightReport.of(f, true, 99_999);
+		assertEquals(200.0 / 30, all.row("Me").dps, D);
+		assertEquals(100.0 / (Fight.wholeTicks(20_000) / 1000.0), boss.row("Me").dps, D);
+		assertEquals(Fight.wholeTicks(20_000), boss.getDurationMs());
+		assertEquals("Vorkath", boss.getTitle());
+	}
+
+	@Test
+	public void bossTimeGrowsWhileTheBossIsAlive()
+	{
+		myHit(0, RAT, false, 10);
+		myHit(5000, BOSS, true, 10);
+		Fight f = tracker.getCurrent();
+		assertEquals(Fight.wholeTicks(7000), f.bossDurationMs(12_000));
+		assertEquals(0, f.bossDiedMs());
+	}
+
+	@Test
+	public void noBossMeansNoBossTime()
+	{
+		myHit(0, RAT, false, 10);
+		Fight f = tracker.getCurrent();
+		assertEquals(0, f.bossDurationMs(5000));
+		assertFalse(f.hasBossMeter());
+		// boss only without a boss: normal fight time
+		assertEquals(Fight.wholeTicks(5000), FightReport.of(f, true, 5000).getDurationMs());
+	}
+
+	@Test
+	public void bossMeterStaysUntilTheNextBoss()
+	{
+		myHit(0, BOSS, true, 10);
+		tracker.npcDied(6000, BOSS, true);
+		Fight boss = tracker.getDisplayFight();
+		assertEquals(6000, boss.bossDiedMs());
+		assertTrue(boss.hasBossMeter());
+
+		// killing normal monsters afterwards keeps the last boss on the boss meter
+		myHit(60_000, RAT, false, 5);
+		assertSame(boss, tracker.getBossDisplayFight());
+
+		myHit(90_000, "301:11", true, 30);
+		assertSame("a new boss fight replaces it", tracker.getCurrent(), tracker.getBossDisplayFight());
+	}
+
+	@Test
+	public void bossClockPausesWithoutHits()
+	{
+		myHit(1000, BOSS, true, 10);
+		Fight f = tracker.getCurrent();
+		assertFalse(f.isPaused(10_000));
+		assertTrue("no hits for 10 s", f.isPaused(11_001));
+	}
+
+	@Test
+	public void newBossFightReplacesTheOldBossMeter()
+	{
+		myHit(0, BOSS, true, 10);
+		tracker.npcDied(600, BOSS, true);
+		myHit(5000, "301:11", true, 30);
+		Fight f = tracker.getDisplayFight();
+		assertTrue(f.isActive());
+		assertTrue(f.hasBossMeter());
+		assertEquals(30, FightReport.of(f, true, 6000).getTotalDamage());
+	}
+
+	@Test
+	public void sessionBossTimeIsTheSumOfBossFights()
+	{
+		myHit(0, RAT, false, 10);
+		myHit(2000, BOSS, true, 50);
+		tracker.npcDied(12_000, BOSS, true); // 10s boss
+		myHit(60_000, BOSS, true, 50);
+		tracker.npcDied(65_000, BOSS, true); // 5s boss
+
+		Fight total = tracker.getSessionTotal(70_000);
+		assertEquals(15_000, total.bossDurationMs(70_000));
+		assertFalse(total.hasBossMeter());
+		FightReport boss = FightReport.of(total, true, 70_000);
+		assertEquals(100.0 / 15, boss.row("Me").dps, D);
+	}
+
+	// ---- active time ----
+
+	@Test
+	public void afkGapIsNotCounted()
+	{
+		tracker.setIdleTimeoutMs(300_000);
+		tracker.setPauseAfterMs(10_000);
+		myHit(1_000, RAT, false, 50);
+		myHit(9_000, RAT, false, 40);     // 8 s: active
+		myHit(129_000, RAT, false, 60);   // 2 min AFK: only 10 s of it count
+		Fight f = tracker.getCurrent();
+		// 8 s + 10 s (until the clock stopped) = 18 s
+		assertEquals(18_000, f.durationMs(129_000));
+		assertEquals(150 / 18.0, report(f, 129_000).row("Me").dps, D);
+	}
+
+	@Test
+	public void clockStopsLiveWhileAfk()
+	{
+		tracker.setIdleTimeoutMs(300_000);
+		tracker.setPauseAfterMs(10_000);
+		myHit(1_000, RAT, false, 10);
+		Fight f = tracker.getCurrent();
+		assertFalse(f.isPaused(10_000));
+		assertEquals(Fight.wholeTicks(9_000), f.durationMs(10_000));
+		assertTrue(f.isPaused(60_000));
+		assertEquals(Fight.wholeTicks(10_000), f.durationMs(60_000));
+		assertEquals(Fight.wholeTicks(10_000), f.durationMs(200_000));
+		tracker.tick(300_999);
+		assertNotNull("fight stays open while AFK", tracker.getCurrent());
+		tracker.tick(301_000);
+		assertNull(tracker.getCurrent());
+		// same time as the live clock showed: no jump when the fight ends
+		assertEquals(Fight.wholeTicks(10_000), tracker.getHistory().get(0).durationMs(999_999));
+	}
+
+	@Test
+	public void bossTimeAlsoSkipsAfk()
+	{
+		tracker.setIdleTimeoutMs(300_000);
+		tracker.setPauseAfterMs(10_000);
+		myHit(1_000, BOSS, true, 100);
+		myHit(6_000, BOSS, true, 100);
+		myHit(66_000, BOSS, true, 100);   // 60 s gap: 50 s paused
+		tracker.npcDied(67_000, BOSS, true);
+		Fight f = tracker.getHistory().get(0);
+		assertEquals(Fight.wholeTicks(16_000), f.bossDurationMs(70_000));
+		assertEquals(Fight.wholeTicks(16_000), f.durationMs(70_000));
+	}
+
+	@Test
+	public void zeroMeansNeverPause()
+	{
+		tracker.setIdleTimeoutMs(300_000);
+		tracker.setPauseAfterMs(0);
+		myHit(1_000, RAT, false, 10);
+		myHit(101_000, RAT, false, 10);
+		assertEquals(Fight.wholeTicks(100_000), tracker.getCurrent().durationMs(101_000));
+	}
+
+	@Test
+	public void pausesSurviveCopyAndSessionTotal()
+	{
+		tracker.setIdleTimeoutMs(300_000);
+		tracker.setPauseAfterMs(10_000);
+		myHit(1_000, RAT, false, 10);
+		myHit(101_000, RAT, false, 10);
+		tracker.endNow(101_000, "test");
+		assertEquals(Fight.wholeTicks(10_000), tracker.getHistory().get(0).copy().durationMs(0));
+		assertEquals(Fight.wholeTicks(10_000), tracker.getSessionTotal(0).durationMs(0));
+	}
+
+	@Test
+	public void copyIsDeep()
+	{
+		myHit(0, RAT, false, 5);
+		Fight c = tracker.getCurrent().copy();
+		myHit(600, RAT, false, 5);
+		assertEquals(5, c.players.get("Me").byTarget.get(RAT).damage);
+		assertEquals(10, tracker.getCurrent().players.get("Me").byTarget.get(RAT).damage);
+	}
+
+	@Test
+	public void veryShortFightUsesOneTickForDps()
+	{
+		myHit(0, RAT, false, 6);
+		FightReport r = report(tracker.getCurrent(), 0);
+		assertEquals(10.0, r.row("Me").dps, D);
+	}
+
+	@Test
+	public void timesAreInWholeTicks()
+	{
+		tracker.setPauseAfterMs(0);
+		myHit(1000, BOSS, true, 10);
+		tracker.npcDied(55_583, BOSS, true);
+		assertEquals("91 ticks", 54_600, tracker.getHistory().get(0).bossDurationMs(0));
+	}
+
+	@Test
+	public void theGameTimeWinsOverOurClock()
+	{
+		myHit(1000, BOSS, true, 10);
+		// the game prints the time when the boss dies, before it is gone
+		assertNull(tracker.gameTime(40_000, GameTimes.parse("Fight duration: 0:42.60")));
+		tracker.npcDied(43_000, BOSS, true);
+		Fight f = tracker.getHistory().get(0);
+		assertEquals(42_600, f.bossDurationMs(0));
+		assertEquals(42_600, BossRecords.kill(f).timeMs);
+	}
+
+	@Test
+	public void aGameTimeRightAfterTheKillFixesTheEndedFight()
+	{
+		myHit(1000, BOSS, true, 10);
+		tracker.npcDied(43_000, BOSS, true);
+		Fight f = tracker.getHistory().get(0);
+		assertSame(f, tracker.gameTime(45_000, GameTimes.parse("Fight duration: 0:42.60")));
+		assertEquals(42_600, f.bossDurationMs(0));
+		assertNull("too late for this kill",
+			tracker.gameTime(43_000 + FightTracker.GAME_TIME_NEAR_MS + 1, GameTimes.parse("Fight duration: 0:30.00")));
+		assertEquals(42_600, f.bossDurationMs(0));
+	}
+
+	@Test
+	public void aGameTimeWithoutABossIsIgnored()
+	{
+		myHit(1000, RAT, false, 10);
+		assertNull(tracker.gameTime(2000, GameTimes.parse("Fight duration: 0:42.60")));
+		assertEquals(0, tracker.getCurrent().gameTimeMs);
+	}
+
+	@Test
+	public void aBossFormThatDisappearsDoesNotKeepTheFightGoing()
+	{
+		// the boss shows as a new NPC for each phase; the old one disappears without dying
+		myHit(1000, "1:20", true, 10);
+		tracker.npcGone(5000, "1:20");
+		myHit(6000, "1:21", true, 10);
+		tracker.npcDied(20_000, "1:21", true);
+		assertNull("the fight ended with the kill", tracker.getCurrent());
+		assertEquals(1, tracker.getHistory().size());
+	}
+
+	@Test
+	public void aBossWhoseTimeTheGameShowedIsDeadWhenItDisappears()
+	{
+		myHit(1000, BOSS, true, 10);
+		tracker.gameTime(20_000, GameTimes.parse("Fight duration: 0:18.60"));
+		tracker.npcGone(21_000, BOSS);
+		assertNull(tracker.getCurrent());
+		assertEquals(18_600, BossRecords.kill(tracker.getHistory().get(0)).timeMs);
+	}
+
+	@Test
+	public void aBossOutOfViewIsNoKill()
+	{
+		myHit(1000, BOSS, true, 10);
+		tracker.npcGone(5000, BOSS);
+		assertNotNull("still fighting it", tracker.getCurrent());
+	}
+}
