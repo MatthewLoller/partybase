@@ -812,6 +812,12 @@ public class DpsModule implements PartybaseModule, FightTracker.Listener
 		return party.getLeaderId();
 	}
 
+	/** You may mark targets and party tiles: you lead, or you are in no party. Client thread. */
+	public boolean canMark()
+	{
+		return party.canMark();
+	}
+
 	/** You lead the party. Any thread. */
 	public boolean youLead()
 	{

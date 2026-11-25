@@ -45,6 +45,7 @@ The party controls are at the top of this tab: start or leave a party, join one 
 
 ### Tiles
 
+- **Party tiles:** the tiles the leader marked (see Party tiles). Untick to hide them, **Save** adds them to Tile Packs as one custom pack, and the leader can **Clear** them for everyone.
 - **Shared with the party:** packs that party members shared. Tick a pack to draw it, **Save** adds it to Tile Packs as a custom pack, and **x** removes it.
 - **Your Tile Packs:** every pack in your Tile Packs plugin, the ones you have turned on first, with a search box. **Share** sends one pack; **Share all turned on** sends every pack you have turned on.
 
@@ -55,6 +56,17 @@ The party controls are at the top of this tab: start or leave a party, join one 
 - **What shows:** Partybase draws shared packs itself, so receivers don't need Tile Packs. Packs from the leader show straight away; packs from other members wait until you tick them. Your own shared packs are listed but start hidden, because Tile Packs already draws them.
 - **How long they last:** shared packs stay until you leave or switch parties. **Save** keeps a pack for good by adding it to Tile Packs as a custom pack. Tile Packs reads its settings when it starts, so the pack appears there after Tile Packs or the client restarts.
 - **Sending:** big packs are split into 12,000-character parts and sent two parts per game tick, so sharing many packs at once doesn't flood the party server. Sharing a pack again replaces the earlier copy.
+
+## Party tiles
+
+The leader can mark and label tiles for the whole party, like RuneLite's Ground Markers.
+
+- **Marking:** shift right-click a tile and choose **Mark party tile**. Clicking it marks the tile yellow; its submenu picks one of eight colours.
+- **Changing:** shift right-click a marked tile for **Unmark party tile**, **Label party tile** (type the label in the chatbox, up to 40 characters) and **Party tile colour**.
+- **Who sees them:** every party member running Partybase, drawn with the shared packs. Members who join later get every party tile from the leader. Only the leader's changes are used; solo players can mark tiles for themselves.
+- **Instances:** tiles are stored in instance template coordinates, as Ground Markers does, so they line up for everyone in the same raid or boss instance.
+- **How long they last:** until you leave or switch parties. When the leader changes, the tiles stay and the new leader can change them. **Save** in the Tiles tab keeps them as a Tile Packs pack.
+- **Limits:** up to 500 party tiles. They're sent 150 per message.
 
 ## Metronome
 
@@ -126,6 +138,7 @@ All party data goes through a party server: RuneLite's, or your own relay server
 | `PartybaseDpsPartyMessage` | Join times, leader changes, kicks, and marks |
 | `PartybaseDefence*` | Defence specs, encounter state, Red Keris timer |
 | `PartybaseTilePack` | A shared tile pack, in parts |
+| `PartybasePartyTiles` | The leader's party tiles: set, put, remove or clear |
 | `PartybaseMetronomeSync` | The leader's metronome, every game tick while it shows one |
 | `SpecialCounterUpdate` | Defence-draining specs, in RuneLite's Special Attack Counter format |
 | `PartyChatMessage` | Fight and boss reports, shown as party chat |
@@ -161,7 +174,7 @@ gradlew build   # compile, checkstyle and tests
 - `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
 - `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
 - `metronome`: the tick metronome (`MetronomeModule`), from Visual Metronome.
-- `tiles`: tile pack sharing (`TileModule`); `TilePacksSource` reads the Tile Packs plugin's data, and `SharedTilesOverlay` is ported from it.
+- `tiles`: tile pack sharing and party tiles (`TileModule`, `PartyTiles`); `TilePacksSource` reads the Tile Packs plugin's data, and `SharedTilesOverlay` is ported from it.
 
 Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts and registers on the event bus, then stops in reverse order. `PartyLink` starts before the modules and stops after them. All settings live in `PartybaseConfig`. Party messages are named `Partybase*`.
 

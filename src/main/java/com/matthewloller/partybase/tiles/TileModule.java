@@ -33,6 +33,7 @@ import com.matthewloller.partybase.dps.DpsModule;
 import com.matthewloller.partybase.party.PartyLink;
 import com.matthewloller.partybase.party.PartybaseMember;
 import com.matthewloller.partybase.party.events.PartybasePartyChanged;
+import com.matthewloller.partybase.party.events.PartybaseUserSync;
 import java.awt.Color;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -56,9 +57,11 @@ import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.WorldViewLoaded;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.chatbox.ChatboxPanelManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
@@ -146,7 +149,12 @@ public class TileModule implements PartybaseModule
 	@Inject
 	private Injector injector;
 
+	@Inject
+	private ChatboxPanelManager chatbox;
+
 	private SharedTilesOverlay overlay;
+	private PartyTiles partyTiles;
+	private volatile boolean partyTilesVisible = true;
 
 	/** Received packs by sender and share id, in arrival order. */
 	private final Map<String, SharedPack> shared = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -160,6 +168,12 @@ public class TileModule implements PartybaseModule
 	public void startUp(PartybasePlugin plugin)
 	{
 		partyLink.registerMessage(PartybaseTilePack.class);
+		partyLink.registerMessage(PartybasePartyTiles.class);
+		partyTiles = new PartyTiles(client, partyLink, dps, chatbox, () ->
+		{
+			clientThread.invokeLater(this::rebuildTiles);
+			refreshPanel();
+		});
 		overlay = injector.getInstance(SharedTilesOverlay.class);
 		overlayManager.add(overlay);
 		panel = new TilesPanel(this);
@@ -176,6 +190,8 @@ public class TileModule implements PartybaseModule
 	{
 		overlayManager.remove(overlay);
 		partyLink.unregisterMessage(PartybaseTilePack.class);
+		partyLink.unregisterMessage(PartybasePartyTiles.class);
+		partyTiles = null;
 		synchronized (outbox)
 		{
 			outbox.clear();
@@ -381,9 +397,101 @@ public class TileModule implements PartybaseModule
 		}
 	}
 
+	// ---- party tiles (marked by the leader) ----
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded e)
+	{
+		PartyTiles pt = partyTiles;
+		if (pt != null)
+		{
+			pt.onMenuEntryAdded(e);
+		}
+	}
+
+	@Subscribe
+	public void onPartybasePartyTiles(PartybasePartyTiles m)
+	{
+		clientThread.invokeLater(() ->
+		{
+			PartyTiles pt = partyTiles;
+			if (pt != null)
+			{
+				pt.received(m);
+			}
+		});
+	}
+
+	/** Someone joined and asked for everyone's state: the leader sends the party tiles. */
+	@Subscribe
+	public void onPartybaseUserSync(PartybaseUserSync e)
+	{
+		clientThread.invokeLater(() ->
+		{
+			PartyTiles pt = partyTiles;
+			PartybaseMember local = partyLink.getLocalMember();
+			if (pt != null && (local == null || local.getMemberId() != e.getMemberId()))
+			{
+				pt.sendAllIfLeader();
+			}
+		});
+	}
+
+	int partyTileCount()
+	{
+		PartyTiles pt = partyTiles;
+		return pt == null ? 0 : pt.size();
+	}
+
+	boolean isPartyTilesVisible()
+	{
+		return partyTilesVisible;
+	}
+
+	void setPartyTilesVisible(boolean visible)
+	{
+		partyTilesVisible = visible;
+		clientThread.invokeLater(this::rebuildTiles);
+	}
+
+	/** You lead, or you are solo: you may mark and clear party tiles. Any thread. */
+	boolean canMarkTiles()
+	{
+		return !partyLink.isInParty() || dps.youLead();
+	}
+
+	void clearPartyTiles()
+	{
+		clientThread.invokeLater(() ->
+		{
+			PartyTiles pt = partyTiles;
+			if (pt != null)
+			{
+				pt.clear();
+			}
+		});
+	}
+
+	/** Saves the party tiles to Tile Packs as one custom pack; returns its id, or -1 with no tiles. */
+	int savePartyTiles()
+	{
+		PartyTiles pt = partyTiles;
+		List<TilePoint> list = pt == null ? Collections.emptyList() : pt.all();
+		if (list.isEmpty())
+		{
+			return -1;
+		}
+		return source.saveCustomPack("Party tiles", gson.toJson(list), null);
+	}
+
 	@Subscribe
 	public void onPartybasePartyChanged(PartybasePartyChanged e)
 	{
+		PartyTiles pt = partyTiles;
+		if (pt != null)
+		{
+			pt.partyChanged();
+		}
 		// shared packs belong to the party
 		shared.clear();
 		synchronized (pending)
@@ -431,6 +539,11 @@ public class TileModule implements PartybaseModule
 			{
 				visible.add(p);
 			}
+		}
+		PartyTiles pt = partyTiles;
+		if (partyTilesVisible && pt != null && pt.size() > 0)
+		{
+			visible.add(new SharedPack("party", 0, "leader", "Party tiles", null, "", pt.all(), true));
 		}
 		if (top == null || visible.isEmpty())
 		{

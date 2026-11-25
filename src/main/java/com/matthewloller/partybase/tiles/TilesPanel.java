@@ -140,6 +140,8 @@ class TilesPanel extends JPanel
 	void refreshShared()
 	{
 		sharedList.removeAll();
+		sharedList.add(partyTilesRow());
+		sharedList.add(Box.createVerticalStrut(2));
 		List<TileModule.SharedPack> packs = tiles.sharedPacks();
 		if (packs.isEmpty())
 		{
@@ -157,6 +159,58 @@ class TilesPanel extends JPanel
 		sharedList.revalidate();
 		sharedList.repaint();
 		listYours();
+	}
+
+	/** The leader's party tiles: show or hide, save, and (for the leader) clear. */
+	private JComponent partyTilesRow()
+	{
+		int count = tiles.partyTileCount();
+		JCheckBox show = new JCheckBox("Party tiles (" + count + ")", tiles.isPartyTilesVisible());
+		show.setOpaque(false);
+		show.setFocusable(false);
+		show.setForeground(Color.WHITE);
+		show.setToolTipText("Tiles the party leader marked (shift right-click a tile to mark one if you lead)");
+		show.addActionListener(e -> tiles.setPartyTilesVisible(show.isSelected()));
+
+		JButton save = button("Save", "Add the party tiles to Tile Packs as one custom pack");
+		save.setEnabled(count > 0);
+		save.addActionListener(e ->
+		{
+			int id = tiles.savePartyTiles();
+			if (id >= 0)
+			{
+				JOptionPane.showMessageDialog(this, "The party tiles were added to Tile Packs (pack " + id + ").\n"
+					+ "Restart Tile Packs (or the client) to see them there.", "Partybase", JOptionPane.INFORMATION_MESSAGE);
+			}
+		});
+		JButton clear = button("Clear", "Remove every party tile, for the whole party");
+		clear.setEnabled(count > 0 && tiles.canMarkTiles());
+		if (!tiles.canMarkTiles())
+		{
+			clear.setToolTipText("Only the party leader can clear party tiles; untick to hide them");
+		}
+		clear.addActionListener(e ->
+		{
+			if (JOptionPane.showConfirmDialog(this, "Remove all " + count + " party tiles for the whole party?", "Partybase",
+				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
+			{
+				tiles.clearPartyTiles();
+			}
+		});
+
+		JPanel buttons = new JPanel(new GridLayout(1, 0, 2, 0));
+		buttons.setOpaque(false);
+		buttons.add(save);
+		buttons.add(clear);
+
+		JPanel row = new JPanel(new BorderLayout(4, 0));
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		row.setBorder(new EmptyBorder(2, 4, 2, 4));
+		row.add(show, BorderLayout.CENTER);
+		row.add(small("shift right-click a tile to mark (leader)", ColorScheme.LIGHT_GRAY_COLOR), BorderLayout.SOUTH);
+		row.add(buttons, BorderLayout.EAST);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		return row;
 	}
 
 	private JComponent sharedRow(TileModule.SharedPack p)
