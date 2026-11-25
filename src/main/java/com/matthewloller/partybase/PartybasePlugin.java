@@ -33,6 +33,7 @@ import com.matthewloller.partybase.data.events.PartyMiscChange;
 import com.matthewloller.partybase.data.events.PartybaseBatchedChange;
 import com.matthewloller.partybase.defence.DefenceModule;
 import com.matthewloller.partybase.dps.DpsModule;
+import com.matthewloller.partybase.metronome.MetronomeModule;
 import com.matthewloller.partybase.party.PartyLink;
 import com.matthewloller.partybase.party.PartybaseMember;
 import com.matthewloller.partybase.party.events.PartybaseMemberAvatar;
@@ -40,6 +41,7 @@ import com.matthewloller.partybase.party.events.PartybaseMemberData;
 import com.matthewloller.partybase.party.events.PartybasePartyChanged;
 import com.matthewloller.partybase.party.events.PartybaseUserPart;
 import com.matthewloller.partybase.party.events.PartybaseUserSync;
+import com.matthewloller.partybase.tiles.TileModule;
 import com.matthewloller.partybase.ui.PlayerPanel;
 import com.matthewloller.partybase.ui.prayer.PrayerSprites;
 import java.awt.image.BufferedImage;
@@ -157,6 +159,15 @@ public class PartybasePlugin extends Plugin
 	@Inject
 	private DefenceModule defence;
 
+	/** The tick metronome (ported from Visual Metronome), synced to the party leader. */
+	@Inject
+	private MetronomeModule metronome;
+
+	/** Tile pack sharing (reads packs from the Tile Packs plugin). */
+	@Getter
+	@Inject
+	private TileModule tiles;
+
 	/** The started modules, in start order. */
 	private List<PartybaseModule> modules = Collections.emptyList();
 
@@ -192,7 +203,7 @@ public class PartybasePlugin extends Plugin
 	{
 		// the party first: the modules register their messages with it
 		partyLink.startUp();
-		modules = Arrays.asList(dps, defence);
+		modules = Arrays.asList(dps, defence, metronome, tiles);
 		for (PartybaseModule module : modules)
 		{
 			module.startUp(this);

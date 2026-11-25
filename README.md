@@ -5,6 +5,9 @@ An all-in-one RuneLite party plugin. It combines three Plugin Hub plugins into o
 - [Party Panel](https://github.com/TheStonedTurtle/party-panel) by TheStonedTurtle: party member info.
 - [GoldenDPS](https://github.com/tjeerocka/goldendps) by tjeerocka: damage, DPS and healing meter.
 - [Better Party Defence](https://github.com/Falsary/better-party-defence) by Heisty: boss defence tracking.
+- [Visual Metronome](https://github.com/vincent0955/Visual-metronome) by vincent0955: a tick metronome, here synced to the party leader.
+
+It also shares tile packs from [Tile Packs](https://github.com/TrevorMDev/tile-packs) by TrevorMDev.
 
 On top of those, Partybase adds a party timer, a party leader, and leader-marked targets.
 
@@ -12,7 +15,7 @@ Everyone in the party needs Partybase. It uses its own party message types, so i
 
 ## Sidebar
 
-The top of the sidebar shows **Party active 1:02:03** and the current leader. The timer counts from when the longest-standing current member joined the party. Below that are two tabs.
+The top of the sidebar shows **Party active 1:02:03** and the current leader. The timer counts from when the longest-standing current member joined the party. Below that are three tabs: Party info, DPS and Tiles.
 
 ### Party info
 
@@ -39,6 +42,27 @@ The party controls are at the top of this tab: start or leave a party, join one 
 - **Reports:** Report buttons send the top five to party chat. After a boss kill, the leader sends the boss report automatically (setting: Auto boss report).
 - **Fun extras:** a crown over the top damage dealer, and a burger or fries over the top healer.
 - **Party sync:** members only count while you are in the same instance or fighting the same boss (setting: Others only when together).
+
+### Tiles
+
+- **Shared with the party:** packs that party members shared. Tick a pack to draw it, **Save** adds it to Tile Packs as a custom pack, and **x** removes it.
+- **Your Tile Packs:** every pack in your Tile Packs plugin, the ones you have turned on first, with a search box. **Share** sends one pack; **Share all turned on** sends every pack you have turned on.
+
+## Tile pack sharing
+
+- **Where packs come from:** Partybase reads the Tile Packs plugin's own data. Built-in packs come from the installed plugin, so they match your Tile Packs version. Edited and custom packs, and which packs are turned on, come from its settings. Without Tile Packs installed, only packs saved in its settings are listed.
+- **Who can share:** anyone in the party.
+- **What shows:** Partybase draws shared packs itself, so receivers don't need Tile Packs. Packs from the leader show straight away; packs from other members wait until you tick them. Your own shared packs are listed but start hidden, because Tile Packs already draws them.
+- **How long they last:** shared packs stay until you leave or switch parties. **Save** keeps a pack for good by adding it to Tile Packs as a custom pack. Tile Packs reads its settings when it starts, so the pack appears there after Tile Packs or the client restarts.
+- **Sending:** big packs are split into 12,000-character parts and sent two parts per game tick, so sharing many packs at once doesn't flood the party server. Sharing a pack again replaces the earlier copy.
+
+## Metronome
+
+The Visual Metronome plugin is built in: a box, tile, number or mouse-following cue every game tick, with up to three cycles, colours and hotkeys. Turn it on with **Metronome > Show metronome**. If you use it here, turn off the standalone Visual Metronome plugin.
+
+- **Following the leader:** with **Sync with party leader** on (the default), your metronome follows the leader's tick position, tick counts and number of colours. This replaces Visual Metronome's typed-in sync target.
+- **The leader's side:** the leader's client sends its metronome every game tick while it shows one and the party has someone else in it. The leader's own metronome is never changed.
+- **Servers:** sync goes through Partybase's party connection, so it works on RuneLite's party server and on a custom server.
 
 ## Party leader and marked targets
 
@@ -87,6 +111,7 @@ All settings are in the Partybase config panel, in these sections:
 | DPS: party | Sharing, counting others, raid party and own party, auto boss report, leave on logout, chat colour |
 | DPS: overlay | Show overlay, compact mode, max bars, width, hide when empty, your bar colour, overall meter, boss meter, simple defence label, hit chance |
 | DPS: fun | Crown on the top damage dealer, snack on the top healer, Max hit column |
+| Metronome, Metronome: ... | Show metronome, sync with party leader, and Visual Metronome's display, colour, cycle and hotkey settings |
 | Defence: general to Defence: effect info boxes | Defence tracker display, info boxes, text and icons, colours, magic defence, effect info boxes |
 
 ## How party data travels
@@ -100,6 +125,8 @@ All party data goes through a party server: RuneLite's, or your own relay server
 | `PartybaseDpsUpdate` | Your hits, healing and damage taken, once per game tick while fighting |
 | `PartybaseDpsPartyMessage` | Join times, leader changes, kicks, and marks |
 | `PartybaseDefence*` | Defence specs, encounter state, Red Keris timer |
+| `PartybaseTilePack` | A shared tile pack, in parts |
+| `PartybaseMetronomeSync` | The leader's metronome, every game tick while it shows one |
 | `SpecialCounterUpdate` | Defence-draining specs, in RuneLite's Special Attack Counter format |
 | `PartyChatMessage` | Fight and boss reports, shown as party chat |
 | `UserSync` | Sent after joining, asking everyone to resend their full state |
@@ -133,6 +160,8 @@ gradlew build   # compile, checkstyle and tests
 - `party`: `PartyLink`, the one party API every feature uses. It is backed by RuneLite's party or a relay server, and posts Partybase party events (`party.events`) in both cases. No other package uses RuneLite's `PartyService`, `WSClient` or party events.
 - `dps`: the DPS meter, party leader and marked targets (`DpsModule`), from GoldenDPS.
 - `defence`: the defence tracker (`DefenceModule`), from Better Party Defence.
+- `metronome`: the tick metronome (`MetronomeModule`), from Visual Metronome.
+- `tiles`: tile pack sharing (`TileModule`); `TilePacksSource` reads the Tile Packs plugin's data, and `SharedTilesOverlay` is ported from it.
 
 Each feature is a `PartybaseModule`: a Guice singleton that `PartybasePlugin` starts and registers on the event bus, then stops in reverse order. `PartyLink` starts before the modules and stops after them. All settings live in `PartybaseConfig`. Party messages are named `Partybase*`.
 
@@ -151,6 +180,6 @@ Because Partybase can connect to a server RuneLite doesn't run, its Plugin Hub e
 
 ## Credits and licences
 
-Partybase is BSD 2-Clause. It includes code from Party Panel (TheStonedTurtle), GoldenDPS (tjeerocka) and Better Party Defence (Heisty), all under BSD 2-Clause. See `LICENSE`.
+Partybase is BSD 2-Clause. It includes code from Party Panel (TheStonedTurtle), GoldenDPS (tjeerocka), Better Party Defence (Heisty), Visual Metronome (vincent0955) and Tile Packs (TrevorMDev), all under BSD 2-Clause. See `LICENSE`.
 
 Better Party Defence includes code derived from OSParty; see `LICENSE-OSPARTY.txt` and `ATTRIBUTION-better-party-defence.md`. GoldenDPS's boss list comes from RuneLite's DPS Counter plugin. Its monster stats (`npc_stats.tsv`) come from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki) (CC BY-NC-SA 3.0).
