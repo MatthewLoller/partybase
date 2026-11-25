@@ -87,6 +87,28 @@ public class MetronomeSyncTest
 		verify(configManager, never()).setConfiguration(anyString(), anyString(), org.mockito.ArgumentMatchers.anyInt());
 	}
 
+	@Test
+	public void tickButtonsStayBetweenOneAndTen() throws Exception
+	{
+		set("clientThread", mock(net.runelite.client.callback.ClientThread.class));
+		module.setTickCount(7);
+		module.setTickCount(15);
+		module.setTickCount(0);
+		verify(configManager).setConfiguration(PartybaseConfig.GROUP, "tickCount", 7);
+		verify(configManager).setConfiguration(PartybaseConfig.GROUP, "tickCount", 10);
+		verify(configManager).setConfiguration(PartybaseConfig.GROUP, "tickCount", 1);
+	}
+
+	@Test
+	public void followingOnlyWhileTheLeadersSyncArrives()
+	{
+		assertEquals(false, module.isFollowingLeader());
+		module.applySync(sync(1));
+		assertEquals(true, module.isFollowingLeader());
+		when(config.metronomeSyncLeader()).thenReturn(false);
+		assertEquals("sync turned off", false, module.isFollowingLeader());
+	}
+
 	private static PartybaseMetronomeSync sync(long from)
 	{
 		PartybaseMetronomeSync m = new PartybaseMetronomeSync();

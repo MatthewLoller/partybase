@@ -65,6 +65,7 @@ class PartybasePanel extends PluginPanel
 	private static final String TAB_PARTY = "Party info";
 	private static final String TAB_DPS = "DPS";
 	private static final String TAB_TILES = "Tiles";
+	private static final String TAB_METRONOME = "Metronome";
 	private static final Color GOLD = new Color(255, 196, 0);
 
 	private final PartybasePlugin plugin;
@@ -73,6 +74,7 @@ class PartybasePanel extends PluginPanel
 	private final JButton partyTab = tabButton(TAB_PARTY);
 	private final JButton dpsTab = tabButton(TAB_DPS);
 	private final JButton tilesTab = tabButton(TAB_TILES);
+	private final JButton metronomeTab = tabButton(TAB_METRONOME);
 	private final JLabel partyTimer = new JLabel();
 	private final JLabel leaderLabel = new JLabel();
 	private final Timer clock = new Timer(1000, e -> updateHeader());
@@ -158,6 +160,10 @@ class PartybasePanel extends PluginPanel
 		tilesScroll.getVerticalScrollBar().setUnitIncrement(16);
 		cards.add(tilesScroll, TAB_TILES);
 
+		final JPanel metronomeWrap = new JPanel(new BorderLayout());
+		metronomeWrap.add(plugin.getMetronome().getPanel(), BorderLayout.NORTH);
+		cards.add(metronomeWrap, TAB_METRONOME);
+
 		this.add(header(), BorderLayout.NORTH);
 		this.add(cards, BorderLayout.CENTER);
 		showTab(TAB_PARTY);
@@ -185,11 +191,14 @@ class PartybasePanel extends PluginPanel
 		partyTab.addActionListener(e -> showTab(TAB_PARTY));
 		dpsTab.addActionListener(e -> showTab(TAB_DPS));
 		tilesTab.addActionListener(e -> showTab(TAB_TILES));
-		final JPanel tabs = new JPanel(new GridLayout(1, 3, 0, 0));
+		metronomeTab.addActionListener(e -> showTab(TAB_METRONOME));
+		// two rows: four names don't fit across the sidebar
+		final JPanel tabs = new JPanel(new GridLayout(2, 2, 0, 0));
 		tabs.setOpaque(false);
 		tabs.add(partyTab);
 		tabs.add(dpsTab);
 		tabs.add(tilesTab);
+		tabs.add(metronomeTab);
 
 		final JPanel header = new JPanel(new BorderLayout(0, 6));
 		header.setBorder(new EmptyBorder(BORDER_OFFSET, BORDER_OFFSET, 0, BORDER_OFFSET));
@@ -214,11 +223,13 @@ class PartybasePanel extends PluginPanel
 		styleTab(partyTab, TAB_PARTY.equals(tab));
 		styleTab(dpsTab, TAB_DPS.equals(tab));
 		styleTab(tilesTab, TAB_TILES.equals(tab));
+		styleTab(metronomeTab, TAB_METRONOME.equals(tab));
 		if (TAB_TILES.equals(tab))
 		{
 			plugin.getTiles().onTabShown();
 		}
 		plugin.getDps().setPanelVisible(active && TAB_DPS.equals(tab));
+		plugin.getMetronome().setPanelVisible(active && TAB_METRONOME.equals(tab));
 	}
 
 	private static void styleTab(JButton b, boolean selected)
@@ -236,6 +247,7 @@ class PartybasePanel extends PluginPanel
 		clock.start();
 		updateHeader();
 		plugin.getDps().setPanelVisible(TAB_DPS.equals(shownTab));
+		plugin.getMetronome().setPanelVisible(TAB_METRONOME.equals(shownTab));
 	}
 
 	@Override
@@ -244,6 +256,7 @@ class PartybasePanel extends PluginPanel
 		active = false;
 		clock.stop();
 		plugin.getDps().setPanelVisible(false);
+		plugin.getMetronome().setPanelVisible(false);
 	}
 
 	private void updateHeader()

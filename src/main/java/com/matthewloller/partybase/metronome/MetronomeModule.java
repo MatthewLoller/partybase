@@ -39,6 +39,8 @@ import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -84,7 +86,12 @@ public class MetronomeModule implements PartybaseModule, KeyListener
 	@Inject
 	private Injector injector;
 
+	/** A leader sync was applied this recently: you are following the leader. */
+	private static final long FOLLOWING_MS = 3000;
+
 	private Overlay[] overlays = new Overlay[0];
+	private MetronomePanel panel;
+	private volatile long lastSyncMs;
 	private boolean shown;
 
 	protected int currentColorIndex = 0;
@@ -136,6 +143,7 @@ public class MetronomeModule implements PartybaseModule, KeyListener
 		updateOverlaysShown();
 		keyManager.registerKeyListener(this);
 		partyLink.registerMessage(PartybaseMetronomeSync.class);
+		panel = new MetronomePanel(this);
 	}
 
 	@Override
@@ -152,6 +160,81 @@ public class MetronomeModule implements PartybaseModule, KeyListener
 
 		keyManager.unregisterKeyListener(this);
 		partyLink.unregisterMessage(PartybaseMetronomeSync.class);
+		if (panel != null)
+		{
+			panel.setShown(false);
+		}
+		panel = null;
+		lastSyncMs = 0;
+	}
+
+	// ---- the Metronome tab (Swing thread) ----
+
+	/** The Metronome tab; null while stopped. */
+	public JComponent getPanel()
+	{
+		return panel;
+	}
+
+	/** The tab came on or went off screen. */
+	public void setPanelVisible(boolean visible)
+	{
+		if (panel != null)
+		{
+			panel.setShown(visible);
+		}
+	}
+
+	boolean isEnabled()
+	{
+		return config.metronomeEnabled();
+	}
+
+	void setEnabled(boolean enabled)
+	{
+		configManager.setConfiguration(PartybaseConfig.GROUP, "metronomeEnabled", enabled);
+	}
+
+	boolean isSyncLeader()
+	{
+		return config.metronomeSyncLeader();
+	}
+
+	void setSyncLeader(boolean sync)
+	{
+		configManager.setConfiguration(PartybaseConfig.GROUP, "metronomeSyncLeader", sync);
+	}
+
+	int getTickCount()
+	{
+		return config.tickCount();
+	}
+
+	/** Ticks per cycle, 1-10 from the tab. A follower's choice is replaced by the leader's next sync. */
+	void setTickCount(int count)
+	{
+		int ticks = Math.max(1, Math.min(MetronomePanel.MAX_TICKS, count));
+		configManager.setConfiguration(PartybaseConfig.GROUP, "tickCount", ticks);
+		// start the new cycle cleanly
+		clientThread.invokeLater(() ->
+		{
+			if (tickCounter > ticks)
+			{
+				tickCounter = 0;
+			}
+		});
+	}
+
+	/** The leader's metronome arrived in the last few seconds and is being followed. */
+	boolean isFollowingLeader()
+	{
+		return config.metronomeSyncLeader() && System.currentTimeMillis() - lastSyncMs < FOLLOWING_MS;
+	}
+
+	/** You lead a party of more than one and show a metronome, so the party follows yours. */
+	boolean isLeading()
+	{
+		return config.metronomeEnabled() && dps.youLead() && partyLink.getMembers().size() > 1;
 	}
 
 	@Subscribe
@@ -218,6 +301,7 @@ public class MetronomeModule implements PartybaseModule, KeyListener
 		{
 			return;
 		}
+		lastSyncMs = System.currentTimeMillis();
 		tickCounter = msg.tickCounter;
 		tickCounter2 = msg.tickCounter2;
 		tickCounter3 = msg.tickCounter3;
@@ -246,6 +330,11 @@ public class MetronomeModule implements PartybaseModule, KeyListener
 		if ("metronomeEnabled".equals(event.getKey()) || "metronomeHidden".equals(event.getKey()))
 		{
 			updateOverlaysShown();
+		}
+		MetronomePanel p = panel;
+		if (p != null)
+		{
+			SwingUtilities.invokeLater(p::refresh);
 		}
 		if (currentColorIndex > config.colorCycle())
 		{

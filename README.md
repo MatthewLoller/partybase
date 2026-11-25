@@ -15,7 +15,7 @@ Everyone in the party needs Partybase. It uses its own party message types, so i
 
 ## Sidebar
 
-The top of the sidebar shows **Party active 1:02:03** and the current leader. The timer counts from when the longest-standing current member joined the party. Below that are three tabs: Party info, DPS and Tiles.
+The top of the sidebar shows **Party active 1:02:03** and the current leader. The timer counts from when the longest-standing current member joined the party. Below that are four tabs, in two rows: Party info, DPS, Tiles and Metronome.
 
 ### Party info
 
@@ -49,6 +49,12 @@ The party controls are at the top of this tab: start or leave a party, join one 
 - **Shared with the party:** packs that party members shared. Tick a pack to draw it, **Save** adds it to Tile Packs as a custom pack, and **x** removes it.
 - **Your Tile Packs:** every pack in your Tile Packs plugin, the ones you have turned on first, with a search box. **Share** sends one pack; **Share all turned on** sends every pack you have turned on.
 
+### Metronome
+
+- **Show metronome** and **Sync with party leader**, the same switches as in the settings.
+- **Ticks per cycle:** buttons 1 to 10; the current one is outlined in gold. Picking one changes the metronome straight away.
+- **Status:** "Following the leader's metronome" while the leader's sync is arriving (the buttons are greyed out, because the leader's tick count wins), or "You lead: the party follows your metronome". When you lead, the number you pick goes to the whole party.
+
 ## Tile pack sharing
 
 - **Where packs come from:** Partybase reads the Tile Packs plugin's own data. Built-in packs come from the installed plugin, so they match your Tile Packs version. Edited and custom packs, and which packs are turned on, come from its settings. Without Tile Packs installed, only packs saved in its settings are listed.
@@ -70,7 +76,7 @@ The leader can mark and label tiles for the whole party, like RuneLite's Ground 
 
 ## Metronome
 
-The Visual Metronome plugin is built in: a box, tile, number or mouse-following cue every game tick, with up to three cycles, colours and hotkeys. Turn it on with **Metronome > Show metronome**. If you use it here, turn off the standalone Visual Metronome plugin.
+The Visual Metronome plugin is built in: a box, tile, number or mouse-following cue every game tick, with up to three cycles, colours and hotkeys. Turn it on in the Metronome tab or with **Metronome > Show metronome** in the settings, and pick the ticks per cycle in the tab. If you use it here, turn off the standalone Visual Metronome plugin.
 
 - **Following the leader:** with **Sync with party leader** on (the default), your metronome follows the leader's tick position, tick counts and number of colours. This replaces Visual Metronome's typed-in sync target.
 - **The leader's side:** the leader's client sends its metronome every game tick while it shows one and the party has someone else in it. The leader's own metronome is never changed.

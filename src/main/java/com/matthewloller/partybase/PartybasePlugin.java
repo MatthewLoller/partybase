@@ -160,6 +160,7 @@ public class PartybasePlugin extends Plugin
 	private DefenceModule defence;
 
 	/** The tick metronome (ported from Visual Metronome), synced to the party leader. */
+	@Getter
 	@Inject
 	private MetronomeModule metronome;
 
